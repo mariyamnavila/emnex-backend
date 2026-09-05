@@ -11,6 +11,7 @@ import { globalErrorHandler } from "./app/middleware/globalErrorHandler";
 import { notFound } from "./app/middleware/notFound";
 import { AuthRoutes } from "./app/module/auth/auth.route";
 import { OrganizationRoutes } from "./app/module/organization/organization.route";
+import { RoleRoutes } from "./app/module/role/role.route";
 
 const app: Application = express();
 
@@ -28,6 +29,7 @@ app.use(cookieParser());
 // Routes
 app.use("/api/v1/auth", AuthRoutes);
 app.use("/api/v1/organizations", OrganizationRoutes);
+app.use("/api/v1/roles", RoleRoutes);
 
 app.get("/", async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json({

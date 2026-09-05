@@ -2,9 +2,8 @@
   "info": {
     "_postman_id": "49a3b6b9-eca8-481a-8e8a-5e78177dc0ff",
     "name": "EmNex Backend",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "52527566",
-    "_collection_link": "https://go.postman.co/collection/52527566-49a3b6b9-eca8-481a-8e8a-5e78177dc0ff?source=collection_link"
+    "description": "Postman Collection with demo data for all implemented endpoints in EmNex Backend API (Auth, Organization, Role & Permissions).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
@@ -16,14 +15,14 @@
             "method": "POST",
             "header": [
               {
-                "key": "Authorization",
-                "value": "",
+                "key": "Content-Type",
+                "value": "application/json",
                 "type": "text"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n    \"organizationName\":\"EmNex System\",\r\n    \"organizationSlug\":\"emnex\",\r\n    \"name\":\"EmNex Admin\",\r\n    \"email\":\"emnex.admin@mail.com\",\r\n    \"password\":\"Aa@12345678\"\r\n}",
+              "raw": "{\n    \"organizationName\": \"EmNex System\",\n    \"organizationSlug\": \"emnex\",\n    \"name\": \"EmNex Admin\",\n    \"email\": \"emnex.admin@mail.com\",\n    \"password\": \"Aa@12345678\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -52,14 +51,14 @@
             "method": "POST",
             "header": [
               {
-                "key": "Authorization",
-                "value": "",
+                "key": "Content-Type",
+                "value": "application/json",
                 "type": "text"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n    \"email\":\"emnex.admin@mail.com\",\r\n    \"password\":\"Aa@12345678\"\r\n}",
+              "raw": "{\n    \"email\": \"emnex.admin@mail.com\",\n    \"password\": \"Aa@12345678\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -92,7 +91,7 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "",
+                "value": "Bearer {{accessToken}}",
                 "type": "text"
               }
             ],
@@ -122,14 +121,19 @@
             "method": "POST",
             "header": [
               {
-                "key": "Authorization",
-                "value": "",
+                "key": "Content-Type",
+                "value": "application/json",
                 "type": "text"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n    \"email\":\"emnex.admin@mail.com\",\r\n    \"password\":\"Aa@12345678\"\r\n}"
+              "raw": "{\n    \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "localhost:5000/api/v1/auth/refresh-token",
@@ -154,13 +158,18 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
                 "type": "text"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n    \"currentPassword\":\"Aa!12345678\",\r\n    \"newPassword\":\"Aa@12345678\"\r\n}",
+              "raw": "{\n    \"currentPassword\": \"Aa@12345678\",\n    \"newPassword\": \"Aa!87654321\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -190,7 +199,7 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "",
+                "value": "Bearer {{accessToken}}",
                 "type": "text"
               }
             ],
@@ -200,8 +209,7 @@
                 {
                   "key": "avatar",
                   "type": "file",
-                  "uuid": "a66d3c6b-6cf5-47b0-8921-2ea8db5c2ae1",
-                  "src": "/C:/Users/User/Downloads/1770535678935.jpg"
+                  "src": []
                 }
               ]
             },
@@ -222,19 +230,19 @@
           "response": []
         },
         {
-          "name": "Logout user",
+          "name": "Logout User",
           "request": {
             "method": "POST",
             "header": [
               {
                 "key": "Authorization",
-                "value": "",
+                "value": "Bearer {{accessToken}}",
                 "type": "text"
               }
             ],
             "body": {
-              "mode": "formdata",
-              "formdata": []
+              "mode": "raw",
+              "raw": ""
             },
             "url": {
               "raw": "localhost:5000/api/v1/auth/logout",
@@ -263,14 +271,14 @@
             "method": "POST",
             "header": [
               {
-                "key": "Authorization",
-                "value": "",
+                "key": "Content-Type",
+                "value": "application/json",
                 "type": "text"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{ \r\n    \"idToken\": \"google_id\" \r\n}",
+              "raw": "{\n    \"idToken\": \"sample_google_id_token\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -294,6 +302,614 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "Organization",
+      "item": [
+        {
+          "name": "Get My Organization",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "localhost:5000/api/v1/organizations/me",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Organization By ID",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "localhost:5000/api/v1/organizations/:id",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{organizationId}}",
+                  "description": "Organization ID"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Organization",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"EmNex System Updated\",\n    \"slug\": \"emnex-updated\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "localhost:5000/api/v1/organizations/:id",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{organizationId}}",
+                  "description": "Organization ID"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Organization Stats",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "localhost:5000/api/v1/organizations/:id/stats",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "organizations",
+                ":id",
+                "stats"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{organizationId}}",
+                  "description": "Organization ID"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Roles & Permissions",
+      "item": [
+        {
+          "name": "Create Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"TEAM_LEAD\",\n    \"description\": \"Team Lead with project management permissions\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "localhost:5000/api/v1/roles",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "roles"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Roles",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "localhost:5000/api/v1/roles",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "roles"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Role By ID",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "localhost:5000/api/v1/roles/:id",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "roles",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{roleId}}",
+                  "description": "Role ID"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Role",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"SENIOR_TEAM_LEAD\",\n    \"description\": \"Senior Team Lead with extended permissions\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "localhost:5000/api/v1/roles/:id",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "roles",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{roleId}}",
+                  "description": "Role ID"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Role",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "localhost:5000/api/v1/roles/:id",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "roles",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{roleId}}",
+                  "description": "Role ID"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Permissions",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "localhost:5000/api/v1/roles/permissions/all",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "roles",
+                "permissions",
+                "all"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Role Permissions",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "localhost:5000/api/v1/roles/:roleId/permissions",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "roles",
+                ":roleId",
+                "permissions"
+              ],
+              "variable": [
+                {
+                  "key": "roleId",
+                  "value": "{{roleId}}",
+                  "description": "Role ID"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Assign Permissions to Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"permissionIds\": [\n        \"550e8400-e29b-41d4-a716-446655440000\",\n        \"550e8400-e29b-41d4-a716-446655440001\"\n    ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "localhost:5000/api/v1/roles/:roleId/permissions",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "roles",
+                ":roleId",
+                "permissions"
+              ],
+              "variable": [
+                {
+                  "key": "roleId",
+                  "value": "{{roleId}}",
+                  "description": "Role ID"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Permission from Role",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "localhost:5000/api/v1/roles/:roleId/permissions/:permissionId",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "roles",
+                ":roleId",
+                "permissions",
+                ":permissionId"
+              ],
+              "variable": [
+                {
+                  "key": "roleId",
+                  "value": "{{roleId}}",
+                  "description": "Role ID"
+                },
+                {
+                  "key": "permissionId",
+                  "value": "{{permissionId}}",
+                  "description": "Permission ID"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "System",
+      "item": [
+        {
+          "name": "Welcome API",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "localhost:5000/",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                ""
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "your_jwt_access_token",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "your_jwt_refresh_token",
+      "type": "string"
+    },
+    {
+      "key": "organizationId",
+      "value": "your_organization_id",
+      "type": "string"
+    },
+    {
+      "key": "roleId",
+      "value": "your_role_id",
+      "type": "string"
+    },
+    {
+      "key": "permissionId",
+      "value": "your_permission_id",
+      "type": "string"
     }
   ]
 }

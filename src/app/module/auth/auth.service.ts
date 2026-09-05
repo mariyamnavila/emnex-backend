@@ -79,6 +79,7 @@ const register = async (payload: IRegisterPayload) => {
 					data: {
 						name: role.name,
 						description: role.description,
+						isSystem: true,
 						organizationId: organization.id,
 					},
 				}),

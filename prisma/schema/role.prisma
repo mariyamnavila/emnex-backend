@@ -5,7 +5,7 @@ model Role {
   isSystem    Boolean @default(false)
 
   organizationId String?
-  organization   Organization? @relation(fields: [organizationId], references: [id])
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   users       User[]
   permissions RolePermission[]

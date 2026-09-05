@@ -8,7 +8,7 @@ model Project {
   budget         Decimal?
   status         ProjectStatus @default(PLANNED)
 
-  organization Organization @relation(fields: [organizationId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   tasks        Task[]
 
   createdAt DateTime  @default(now())

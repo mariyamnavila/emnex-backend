@@ -11,7 +11,7 @@ model Employee {
   joiningDate    DateTime
   status         EmployeeStatus @default(ACTIVE)
 
-  organization Organization  @relation(fields: [organizationId], references: [id])
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user         User          @relation(fields: [userId], references: [id])
   department   Department?   @relation(fields: [departmentId], references: [id])
 
