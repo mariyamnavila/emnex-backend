@@ -110,63 +110,49 @@ const systemRoleTemplates = [
 	},
 ];
 
-export const seedPermissions = async () => {
-	for (const permissionName of defaultPermissions) {
-		await prisma.permission.upsert({
-			where: { name: permissionName },
-			update: {},
-			create: { name: permissionName },
-		});
-	}
-	console.log("Permissions seeded successfully");
-};
+export const seed = async () => {
+	try {
+		// Check if already seeded
+		const existingPermissions = await prisma.permission.count();
+		if (existingPermissions > 0) {
+			console.log("Database already seeded, skipping...");
+			return;
+		}
 
-export const seedSystemRoles = async () => {
-	for (const roleData of systemRoleTemplates) {
-		let role = await prisma.role.findFirst({
-			where: {
-				name: roleData.name,
-				isSystem: true,
-				organizationId: null,
-			},
+		// Bulk create permissions
+		await prisma.permission.createMany({
+			data: defaultPermissions.map((name) => ({ name })),
+			skipDuplicates: true,
 		});
+		console.log("Permissions seeded");
 
-		if (!role) {
-			role = await prisma.role.create({
+		// Get all permissions for mapping
+		const allPermissions = await prisma.permission.findMany();
+		const permissionMap = new Map(allPermissions.map((p) => [p.name, p.id]));
+
+		// Create system roles with permissions in transaction
+		for (const roleData of systemRoleTemplates) {
+			const role = await prisma.role.create({
 				data: {
 					name: roleData.name,
 					description: roleData.description,
 					isSystem: true,
 				},
 			});
-		}
 
-		const permissions = await prisma.permission.findMany({
-			where: {
-				name: { in: roleData.permissions },
-			},
-		});
-
-		for (const permission of permissions) {
-			await prisma.rolePermission.upsert({
-				where: {
-					roleId_permissionId: {
-						roleId: role.id,
-						permissionId: permission.id,
-					},
-				},
-				update: {},
-				create: {
+			const rolePermissions = roleData.permissions
+				.filter((p) => permissionMap.has(p))
+				.map((p) => ({
 					roleId: role.id,
-					permissionId: permission.id,
-				},
+					permissionId: permissionMap.get(p)!,
+				}));
+
+			await prisma.rolePermission.createMany({
+				data: rolePermissions,
 			});
 		}
+		console.log("System roles seeded");
+	} catch (error) {
+		console.error("Error seeding:", error);
 	}
-	console.log("System roles seeded successfully");
-};
-
-export const seed = async () => {
-	await seedPermissions();
-	await seedSystemRoles();
 };
