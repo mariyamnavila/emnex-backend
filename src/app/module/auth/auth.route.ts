@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { auth } from "../../middleware/checkAuth";
 import { validateRequest } from "../../middleware/validateRequest";
+import { upload } from "../../lib/multer";
 import { AuthController } from "./auth.controller";
 import { AuthValidation } from "./auth.validation";
 
@@ -27,6 +28,15 @@ router.post(
 	auth(),
 	validateRequest(AuthValidation.ChangePasswordZodSchema),
 	AuthController.changePassword,
+);
+
+router.post("/logout", auth(), AuthController.logout);
+
+router.post(
+	"/upload-avatar",
+	auth(),
+	upload.single("avatar"),
+	AuthController.uploadAvatar,
 );
 
 export const AuthRoutes = router;

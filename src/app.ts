@@ -2,7 +2,6 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, {
 	type Application,
-	type NextFunction,
 	type Request,
 	type Response,
 } from "express";

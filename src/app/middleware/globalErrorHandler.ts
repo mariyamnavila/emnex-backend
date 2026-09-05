@@ -1,7 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status";
 import { Prisma } from "../../generated/prisma/client";
-import config from "../config";
 import { AppError } from "../utils/AppError";
 
 export const globalErrorHandler = async (
@@ -25,7 +24,8 @@ export const globalErrorHandler = async (
 			errorMessage = "Foreign key constraint failed";
 		} else if (err.code === "P2025") {
 			statusCode = httpStatus.BAD_REQUEST;
-			errorMessage = "An operation failed because it depends on one or more records that were required but not found.";
+			errorMessage =
+				"An operation failed because it depends on one or more records that were required but not found.";
 		}
 	} else if (err instanceof Prisma.PrismaClientInitializationError) {
 		if (err.errorCode === "P1000") {

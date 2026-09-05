@@ -131,10 +131,42 @@ const changePassword = catchAsync(async (req: Request, res: Response) => {
 	});
 });
 
+const logout = catchAsync(async (req: Request, res: Response) => {
+	res.clearCookie("accessToken");
+	res.clearCookie("refreshToken");
+
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "Logged out successfully",
+		data: null,
+	});
+});
+
+const uploadAvatar = catchAsync(async (req: Request, res: Response) => {
+	const user = req.user as IRequestUser;
+	const file = req.file;
+
+	if (!file) {
+		throw new Error("Please upload an image file");
+	}
+
+	const result = await AuthService.uploadAvatar(user, file);
+
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "Avatar uploaded successfully",
+		data: result,
+	});
+});
+
 export const AuthController = {
 	register,
 	loginUser,
 	getMe,
 	refreshToken,
 	changePassword,
+	logout,
+	uploadAvatar,
 };

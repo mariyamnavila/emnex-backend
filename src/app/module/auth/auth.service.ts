@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import httpStatus from "http-status";
 import type { SignOptions } from "jsonwebtoken";
 import config from "../../config";
+import { cloudinary } from "../../lib/cloudinary";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/AppError";
 import { jwtUtils } from "../../utils/jwt";
@@ -321,10 +322,49 @@ const changePassword = async (
 	return { message: "Password changed successfully" };
 };
 
+const uploadAvatar = async (user: IRequestUser, file: Express.Multer.File) => {
+	const userRecord = await prisma.user.findUnique({
+		where: { id: user.userId },
+	});
+
+	if (!userRecord) {
+		throw new AppError(httpStatus.NOT_FOUND, "User not found");
+	}
+
+	// Upload to cloudinary
+	const result = await new Promise<{ secure_url: string; public_id: string }>((resolve, reject) => {
+		const uploadStream = cloudinary.uploader.upload_stream(
+			{
+				folder: "emnex/avatars",
+				public_id: `avatar-${user.userId}`,
+				overwrite: true,
+			},
+			(error, result) => {
+				if (error) reject(error);
+				else resolve(result as { secure_url: string; public_id: string });
+			},
+		);
+		uploadStream.end(file.buffer);
+	});
+
+	// Update user avatar
+	await prisma.user.update({
+		where: { id: user.userId },
+		data: {
+			avatar: result.secure_url,
+		},
+	});
+
+	return {
+		avatar: result.secure_url,
+	};
+};
+
 export const AuthService = {
 	register,
 	loginUser,
 	getMe,
 	refreshToken,
 	changePassword,
+	uploadAvatar,
 };
