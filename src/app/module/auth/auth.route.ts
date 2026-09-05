@@ -39,4 +39,6 @@ router.post(
 	AuthController.uploadAvatar,
 );
 
+router.post("/google", AuthController.googleLogin);
+
 export const AuthRoutes = router;

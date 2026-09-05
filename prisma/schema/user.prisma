@@ -1,5 +1,5 @@
 model User {
-  id             String       @id @default(uuid())
+  id             String @id @default(uuid())
   organizationId String
 
   name     String
@@ -12,17 +12,18 @@ model User {
   emailVerified Boolean      @default(false)
 
   roleId String
-  role   Role @relation(fields: [roleId], references: [id])
+  role   Role   @relation(fields: [roleId], references: [id])
 
   organization Organization @relation(fields: [organizationId], references: [id])
 
   employee  Employee?
   auditLogs AuditLog[]
 
-  status    UserStatus @default(ACTIVE)
-  isActive  Boolean    @default(true)
-  isDeleted Boolean    @default(false)
-  deletedAt DateTime?
+  status             UserStatus @default(ACTIVE)
+  isActive           Boolean    @default(true)
+  isDeleted          Boolean    @default(false)
+  mustChangePassword Boolean    @default(false)
+  deletedAt          DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

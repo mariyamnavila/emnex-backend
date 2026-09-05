@@ -3,10 +3,12 @@ import httpStatus from "http-status";
 import type { SignOptions } from "jsonwebtoken";
 import config from "../../config";
 import { cloudinary } from "../../lib/cloudinary";
+import { googleClient } from "../../lib/googleAuth";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/AppError";
 import { jwtUtils } from "../../utils/jwt";
 import type {
+	IGoogleLoginPayload,
 	ILoginPayload,
 	IRegisterPayload,
 	IRequestUser,
@@ -15,7 +17,6 @@ import type {
 const register = async (payload: IRegisterPayload) => {
 	const { organizationName, organizationSlug, name, email, password } = payload;
 
-	// 1. Check existing user and organization
 	const [existingUser, existingOrg] = await Promise.all([
 		prisma.user.findUnique({ where: { email } }),
 		prisma.organization.findUnique({
@@ -37,7 +38,6 @@ const register = async (payload: IRegisterPayload) => {
 		);
 	}
 
-	// 2. Get system roles + permissions
 	const systemRoles = await prisma.role.findMany({
 		where: {
 			isSystem: true,
@@ -59,13 +59,11 @@ const register = async (payload: IRegisterPayload) => {
 		);
 	}
 
-	// 3. Hash password
 	const hashedPassword = await bcrypt.hash(
 		password,
 		Number(config.bcrypt_salt_rounds),
 	);
 
-	// 4. Create organization, roles, permissions and admin
 	const result = await prisma.$transaction(async (tx) => {
 		const organization = await tx.organization.create({
 			data: {
@@ -126,7 +124,6 @@ const register = async (payload: IRegisterPayload) => {
 		};
 	});
 
-	// 5. Generate tokens
 	const jwtPayload = {
 		userId: result.user.id,
 		name: result.user.name,
@@ -217,6 +214,7 @@ const loginUser = async (payload: ILoginPayload) => {
 			email: user.email,
 			role: user.role.name,
 			organizationId: user.organizationId,
+			mustChangePassword: user.mustChangePassword,
 		},
 	};
 };
@@ -316,7 +314,10 @@ const changePassword = async (
 
 	await prisma.user.update({
 		where: { id: user.userId },
-		data: { password: hashedNewPassword },
+		data: {
+			password: hashedNewPassword,
+			mustChangePassword: false,
+		},
 	});
 
 	return { message: "Password changed successfully" };
@@ -332,20 +333,22 @@ const uploadAvatar = async (user: IRequestUser, file: Express.Multer.File) => {
 	}
 
 	// Upload to cloudinary
-	const result = await new Promise<{ secure_url: string; public_id: string }>((resolve, reject) => {
-		const uploadStream = cloudinary.uploader.upload_stream(
-			{
-				folder: "emnex/avatars",
-				public_id: `avatar-${user.userId}`,
-				overwrite: true,
-			},
-			(error, result) => {
-				if (error) reject(error);
-				else resolve(result as { secure_url: string; public_id: string });
-			},
-		);
-		uploadStream.end(file.buffer);
-	});
+	const result = await new Promise<{ secure_url: string; public_id: string }>(
+		(resolve, reject) => {
+			const uploadStream = cloudinary.uploader.upload_stream(
+				{
+					folder: "emnex/avatars",
+					public_id: `avatar-${user.userId}`,
+					overwrite: true,
+				},
+				(error, result) => {
+					if (error) reject(error);
+					else resolve(result as { secure_url: string; public_id: string });
+				},
+			);
+			uploadStream.end(file.buffer);
+		},
+	);
 
 	// Update user avatar
 	await prisma.user.update({
@@ -360,6 +363,98 @@ const uploadAvatar = async (user: IRequestUser, file: Express.Multer.File) => {
 	};
 };
 
+const googleLogin = async (payload: IGoogleLoginPayload) => {
+	let googleIdTokenPayload: {
+		email?: string;
+		name?: string;
+		sub?: string;
+	} | null = null;
+
+	try {
+		const ticket = await googleClient.verifyIdToken({
+			idToken: payload.idToken,
+			audience: config.google_client_id,
+		});
+		googleIdTokenPayload = ticket.getPayload() ?? null;
+	} catch {
+		throw new AppError(
+			httpStatus.UNAUTHORIZED,
+			"Invalid or expired Google ID token",
+		);
+	}
+
+	if (!googleIdTokenPayload?.email) {
+		throw new AppError(httpStatus.BAD_REQUEST, "Google email not found");
+	}
+
+	const email = googleIdTokenPayload.email;
+	const googleId = googleIdTokenPayload.sub;
+
+	// Find existing user with this email
+	let user = await prisma.user.findUnique({
+		where: { email },
+		include: { role: true },
+	});
+
+	if (user) {
+		// User exists — check status
+		if (user.status === "BLOCKED") {
+			throw new AppError(httpStatus.FORBIDDEN, "Your account has been blocked");
+		}
+
+		if (user.isDeleted || user.status === "DELETED") {
+			throw new AppError(httpStatus.FORBIDDEN, "Your account has been deleted");
+		}
+
+		// Link Google account if not already linked
+		if (!user.googleId) {
+			user = await prisma.user.update({
+				where: { id: user.id },
+				data: { googleId },
+				include: { role: true },
+			});
+		}
+	} else {
+		// No user found with this email
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			"No account found with this email. Please register through your organization first.",
+		);
+	}
+
+	const jwtPayload = {
+		userId: user.id,
+		name: user.name,
+		email: user.email,
+		role: user.role.name,
+		organizationId: user.organizationId,
+	};
+
+	const accessToken = jwtUtils.createToken(
+		jwtPayload,
+		config.jwt_access_secret,
+		config.jwt_access_expires_in as SignOptions,
+	);
+
+	const refreshToken = jwtUtils.createToken(
+		jwtPayload,
+		config.jwt_refresh_secret,
+		config.jwt_refresh_expires_in as SignOptions,
+	);
+
+	return {
+		accessToken,
+		refreshToken,
+		user: {
+			id: user.id,
+			name: user.name,
+			email: user.email,
+			role: user.role.name,
+			organizationId: user.organizationId,
+		},
+	};
+};
+
 export const AuthService = {
 	register,
 	loginUser,
@@ -367,4 +462,5 @@ export const AuthService = {
 	refreshToken,
 	changePassword,
 	uploadAvatar,
+	googleLogin,
 };

@@ -161,6 +161,37 @@ const uploadAvatar = catchAsync(async (req: Request, res: Response) => {
 	});
 });
 
+const googleLogin = catchAsync(async (req: Request, res: Response) => {
+	const { idToken } = req.body;
+
+	const result = await AuthService.googleLogin({ idToken });
+
+	res.cookie("accessToken", result.accessToken, {
+		httpOnly: true,
+		secure: false,
+		sameSite: "none",
+		maxAge: 1000 * 60 * 60 * 24,
+	});
+
+	res.cookie("refreshToken", result.refreshToken, {
+		httpOnly: true,
+		secure: false,
+		sameSite: "none",
+		maxAge: 1000 * 60 * 60 * 24 * 7,
+	});
+
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "Logged in with Google successfully",
+		data: {
+			accessToken: result.accessToken,
+			refreshToken: result.refreshToken,
+			user: result.user,
+		},
+	});
+});
+
 export const AuthController = {
 	register,
 	loginUser,
@@ -169,4 +200,5 @@ export const AuthController = {
 	changePassword,
 	logout,
 	uploadAvatar,
+	googleLogin,
 };
