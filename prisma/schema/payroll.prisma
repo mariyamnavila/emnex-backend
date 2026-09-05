@@ -1,0 +1,24 @@
+model Payroll {
+  id             String        @id @default(uuid())
+  organizationId String
+  employeeId     String
+  periodStart    DateTime
+  periodEnd      DateTime
+  grossAmount    Decimal
+  deductions     Decimal       @default(0)
+  netAmount      Decimal
+  status         PayrollStatus @default(DRAFT)
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  employee     Employee     @relation(fields: [employeeId], references: [id])
+  payment      Payment?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([employeeId, periodStart, periodEnd])
+  @@index([organizationId])
+  @@index([employeeId])
+  @@index([status])
+  @@map("payrolls")
+}

@@ -1,0 +1,23 @@
+model Payment {
+  id             String          @id @default(uuid())
+  organizationId String
+  payrollId      String          @unique
+  employeeId     String
+  amount         Decimal
+  currency       String          @default("BDT")
+  transactionId  String?         @unique
+  gateway        PaymentGateway  @default(STRIPE)
+  status         PaymentStatus   @default(PENDING)
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  payroll      Payroll      @relation(fields: [payrollId], references: [id])
+  employee     Employee     @relation(fields: [employeeId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([employeeId])
+  @@index([status])
+  @@map("payments")
+}

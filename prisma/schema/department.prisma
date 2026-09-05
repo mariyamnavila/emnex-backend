@@ -1,0 +1,16 @@
+model Department {
+  id             String @id @default(uuid())
+  organizationId String
+  name           String
+  description    String?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  employees    Employee[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("departments")
+}

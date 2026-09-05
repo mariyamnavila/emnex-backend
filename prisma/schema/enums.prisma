@@ -8,3 +8,68 @@ enum UserStatus {
   BLOCKED
   DELETED
 }
+
+enum SalaryType {
+  MONTHLY
+  HOURLY
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  TERMINATED
+}
+
+enum ProjectStatus {
+  PLANNED
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  SUBMITTED
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum SubmissionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PayrollStatus {
+  DRAFT
+  GENERATED
+  APPROVED
+  PROCESSING
+  PAID
+  REJECTED
+}
+
+enum PaymentGateway {
+  STRIPE
+  SSLCOMMERZ
+  BKASH
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+}

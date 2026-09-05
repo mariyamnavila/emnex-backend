@@ -3,8 +3,14 @@ model Organization {
   name String
   slug String @unique
 
-  users User[]
-  roles Role[]
+  users       User[]
+  roles       Role[]
+  departments Department[]
+  employees   Employee[]
+  projects    Project[]
+  payrolls    Payroll[]
+  payments    Payment[]
+  auditLogs   AuditLog[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

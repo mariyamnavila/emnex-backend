@@ -1,0 +1,26 @@
+model Task {
+  id             String       @id @default(uuid())
+  projectId      String
+  employeeId     String
+  title          String
+  description    String?
+  estimatedHours Decimal?
+  priority       TaskPriority @default(MEDIUM)
+  status         TaskStatus   @default(TODO)
+  dueDate        DateTime?
+
+  project  Project  @relation(fields: [projectId], references: [id])
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  submissions WorkSubmission[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([projectId])
+  @@index([employeeId])
+  @@index([status])
+  @@index([dueDate])
+  @@map("tasks")
+}

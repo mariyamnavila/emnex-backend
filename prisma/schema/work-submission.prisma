@@ -1,0 +1,23 @@
+model WorkSubmission {
+  id          String           @id @default(uuid())
+  taskId      String
+  employeeId  String
+  description String
+  hoursWorked Decimal
+  workDate    DateTime
+  status      SubmissionStatus @default(PENDING)
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  reviewNote  String?
+
+  task     Task     @relation(fields: [taskId], references: [id])
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([taskId])
+  @@index([employeeId])
+  @@index([status])
+  @@map("work_submissions")
+}
