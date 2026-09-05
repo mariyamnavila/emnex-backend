@@ -2,6 +2,10 @@ import httpStatus from "http-status";
 import type { IRequestUser } from "../../interfaces";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/AppError";
+import {
+	validateEmployeeCanViewSubmissions,
+	validateEmployeeCanWork,
+} from "../../utils/employeeStatus";
 import type {
 	ISubmissionCreatePayload,
 	ISubmissionQueryParams,
@@ -29,6 +33,8 @@ const createSubmission = async (
 	if (!employee) {
 		throw new AppError(httpStatus.FORBIDDEN, "Employee record not found");
 	}
+
+	validateEmployeeCanWork(employee.status);
 
 	// Verify task exists and belongs to this employee
 	const task = await prisma.task.findUnique({
@@ -268,7 +274,7 @@ const approveSubmission = async (id: string, user: IRequestUser) => {
 			},
 		});
 
-		// Update task status to SUBMITTED (ready for next step)
+		// Update task status to SUBMITTED
 		await tx.task.update({
 			where: { id: submission.taskId },
 			data: { status: "SUBMITTED" },
@@ -356,6 +362,8 @@ const getMySubmissions = async (user: IRequestUser) => {
 			"This endpoint is for employees only",
 		);
 	}
+
+	validateEmployeeCanViewSubmissions(employee.status);
 
 	const submissions = await prisma.workSubmission.findMany({
 		where: { employeeId: employee.id },

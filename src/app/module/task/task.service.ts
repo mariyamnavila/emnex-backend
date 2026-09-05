@@ -2,6 +2,7 @@ import httpStatus from "http-status";
 import type { IRequestUser } from "../../interfaces";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/AppError";
+import { validateEmployeeCanAssign, validateEmployeeCanViewTasks } from "../../utils/employeeStatus";
 import type {
 	ITaskAssignPayload,
 	ITaskCreatePayload,
@@ -50,6 +51,8 @@ const createTask = async (payload: ITaskCreatePayload, user: IRequestUser) => {
 			"Employee not found in this organization",
 		);
 	}
+
+	validateEmployeeCanAssign(employee.status);
 
 	const task = await prisma.task.create({
 		data: {
@@ -243,10 +246,11 @@ const deleteTask = async (id: string, user: IRequestUser) => {
 		);
 	}
 
-	if (task._count.submissions > 0) {
+	const deletableStatuses = ["TODO", "COMPLETED"];
+	if (!deletableStatuses.includes(task.status)) {
 		throw new AppError(
 			httpStatus.BAD_REQUEST,
-			"Cannot delete task with submissions. Remove submissions first.",
+			`Cannot delete task with ${task.status} status. Only TODO or COMPLETED tasks can be deleted.`,
 		);
 	}
 
@@ -290,6 +294,8 @@ const assignTask = async (
 			"Employee not found in this organization",
 		);
 	}
+
+	validateEmployeeCanAssign(employee.status);
 
 	const updatedTask = await prisma.task.update({
 		where: { id },
@@ -376,6 +382,8 @@ const getMyTasks = async (user: IRequestUser) => {
 			"This endpoint is for employees only. You can view all tasks.",
 		);
 	}
+
+	validateEmployeeCanViewTasks(employee.status);
 
 	const tasks = await prisma.task.findMany({
 		where: { employeeId: employee.id },
