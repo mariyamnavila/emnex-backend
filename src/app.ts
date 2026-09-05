@@ -13,6 +13,7 @@ import { AuthRoutes } from "./app/module/auth/auth.route";
 import { DepartmentRoutes } from "./app/module/department/department.route";
 import { EmployeeRoutes } from "./app/module/employee/employee.route";
 import { OrganizationRoutes } from "./app/module/organization/organization.route";
+import { PayrollRoutes } from "./app/module/payroll/payroll.route";
 import { ProjectRoutes } from "./app/module/project/project.route";
 import { RoleRoutes } from "./app/module/role/role.route";
 import { SubmissionRoutes } from "./app/module/submission/submission.route";
@@ -40,6 +41,7 @@ app.use("/api/v1/employees", EmployeeRoutes);
 app.use("/api/v1/projects", ProjectRoutes);
 app.use("/api/v1/tasks", TaskRoutes);
 app.use("/api/v1/submissions", SubmissionRoutes);
+app.use("/api/v1/payroll", PayrollRoutes);
 
 app.get("/", async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json({
