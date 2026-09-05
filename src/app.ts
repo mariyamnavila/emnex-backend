@@ -10,6 +10,7 @@ import config from "./app/config";
 import { globalErrorHandler } from "./app/middleware/globalErrorHandler";
 import { notFound } from "./app/middleware/notFound";
 import { AuthRoutes } from "./app/module/auth/auth.route";
+import { DepartmentRoutes } from "./app/module/department/department.route";
 import { OrganizationRoutes } from "./app/module/organization/organization.route";
 import { RoleRoutes } from "./app/module/role/role.route";
 
@@ -30,6 +31,7 @@ app.use(cookieParser());
 app.use("/api/v1/auth", AuthRoutes);
 app.use("/api/v1/organizations", OrganizationRoutes);
 app.use("/api/v1/roles", RoleRoutes);
+app.use("/api/v1/departments", DepartmentRoutes);
 
 app.get("/", async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json({

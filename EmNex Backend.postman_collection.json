@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "49a3b6b9-eca8-481a-8e8a-5e78177dc0ff",
     "name": "EmNex Backend",
-    "description": "Postman Collection with demo data for all implemented endpoints in EmNex Backend API (Auth, Organization, Role & Permissions).",
+    "description": "Postman Collection with demo data for all implemented endpoints in EmNex Backend API (Auth, Organization, Roles & Permissions, Department).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -850,6 +850,253 @@
       ]
     },
     {
+      "name": "Department",
+      "item": [
+        {
+          "name": "Create Department",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Engineering\",\n    \"description\": \"Software development and engineering operations\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "localhost:5000/api/v1/departments",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "departments"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Departments",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "localhost:5000/api/v1/departments",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "departments"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Department By ID",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "localhost:5000/api/v1/departments/:id",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "departments",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{departmentId}}",
+                  "description": "Department ID"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Department",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Software Engineering\",\n    \"description\": \"Core product engineering and technology infrastructure\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "localhost:5000/api/v1/departments/:id",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "departments",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{departmentId}}",
+                  "description": "Department ID"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Department",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "localhost:5000/api/v1/departments/:id",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "departments",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{departmentId}}",
+                  "description": "Department ID"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Department Employees",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "localhost:5000/api/v1/departments/:id/employees",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "departments",
+                ":id",
+                "employees"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{departmentId}}",
+                  "description": "Department ID"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "System",
       "item": [
         {
@@ -909,6 +1156,11 @@
     {
       "key": "permissionId",
       "value": "your_permission_id",
+      "type": "string"
+    },
+    {
+      "key": "departmentId",
+      "value": "your_department_id",
       "type": "string"
     }
   ]
