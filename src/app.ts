@@ -13,6 +13,7 @@ import { AuthRoutes } from "./app/module/auth/auth.route";
 import { DepartmentRoutes } from "./app/module/department/department.route";
 import { EmployeeRoutes } from "./app/module/employee/employee.route";
 import { OrganizationRoutes } from "./app/module/organization/organization.route";
+import { ProjectRoutes } from "./app/module/project/project.route";
 import { RoleRoutes } from "./app/module/role/role.route";
 
 const app: Application = express();
@@ -34,6 +35,7 @@ app.use("/api/v1/organizations", OrganizationRoutes);
 app.use("/api/v1/roles", RoleRoutes);
 app.use("/api/v1/departments", DepartmentRoutes);
 app.use("/api/v1/employees", EmployeeRoutes);
+app.use("/api/v1/projects", ProjectRoutes);
 
 app.get("/", async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json({
