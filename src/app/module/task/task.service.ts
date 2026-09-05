@@ -344,7 +344,7 @@ const updateTaskStatus = async (
 	if (!allowed || !allowed.includes(status)) {
 		throw new AppError(
 			httpStatus.BAD_REQUEST,
-			`Cannot transition from ${task.status.toLowerCase} to ${status.toLowerCase}`,
+			`Cannot transition from ${task.status} to ${status}`,
 		);
 	}
 
@@ -371,7 +371,10 @@ const getMyTasks = async (user: IRequestUser) => {
 	});
 
 	if (!employee) {
-		throw new AppError(httpStatus.NOT_FOUND, "Employee record not found");
+		throw new AppError(
+			httpStatus.FORBIDDEN,
+			"This endpoint is for employees only. You can view all tasks.",
+		);
 	}
 
 	const tasks = await prisma.task.findMany({
