@@ -11,10 +11,20 @@ import type {
 } from "./task.interface";
 
 const createTask = async (payload: ITaskCreatePayload, user: IRequestUser) => {
+	const {
+		projectId,
+		employeeId,
+		title,
+		description,
+		estimatedHours,
+		priority,
+		dueDate,
+	} = payload;
+
 	// Verify project exists in this organization
 	const project = await prisma.project.findFirst({
 		where: {
-			id: payload.projectId,
+			id: projectId,
 			organizationId: user.organizationId,
 		},
 	});
@@ -29,7 +39,7 @@ const createTask = async (payload: ITaskCreatePayload, user: IRequestUser) => {
 	// Verify employee exists in this organization
 	const employee = await prisma.employee.findFirst({
 		where: {
-			id: payload.employeeId,
+			id: employeeId,
 			organizationId: user.organizationId,
 		},
 	});
@@ -43,13 +53,13 @@ const createTask = async (payload: ITaskCreatePayload, user: IRequestUser) => {
 
 	const task = await prisma.task.create({
 		data: {
-			projectId: payload.projectId,
-			employeeId: payload.employeeId,
-			title: payload.title,
-			description: payload.description,
-			estimatedHours: payload.estimatedHours,
-			priority: payload.priority,
-			dueDate: payload.dueDate ? new Date(payload.dueDate) : undefined,
+			projectId,
+			employeeId,
+			title,
+			description,
+			estimatedHours,
+			priority,
+			dueDate: dueDate ? new Date(dueDate) : undefined,
 		},
 		include: {
 			project: true,
@@ -171,6 +181,8 @@ const updateTask = async (
 	payload: ITaskUpdatePayload,
 	user: IRequestUser,
 ) => {
+	const { title, description, estimatedHours, priority, dueDate } = payload;
+
 	const task = await prisma.task.findUnique({
 		where: { id },
 		include: { project: true },
@@ -190,8 +202,11 @@ const updateTask = async (
 	const updatedTask = await prisma.task.update({
 		where: { id },
 		data: {
-			...payload,
-			dueDate: payload.dueDate ? new Date(payload.dueDate) : undefined,
+			title,
+			description,
+			estimatedHours,
+			priority,
+			dueDate: dueDate ? new Date(dueDate) : undefined,
 		},
 		include: {
 			project: true,
@@ -292,11 +307,22 @@ const assignTask = async (
 	return updatedTask;
 };
 
+const validTaskTransitions: Record<string, string[]> = {
+	TODO: ["IN_PROGRESS"],
+	IN_PROGRESS: ["SUBMITTED"],
+	SUBMITTED: ["APPROVED", "REJECTED"],
+	REJECTED: ["IN_PROGRESS"],
+	APPROVED: ["COMPLETED"],
+	COMPLETED: [],
+};
+
 const updateTaskStatus = async (
 	id: string,
 	payload: ITaskStatusUpdatePayload,
 	user: IRequestUser,
 ) => {
+	const { status } = payload;
+
 	const task = await prisma.task.findUnique({
 		where: { id },
 		include: { project: true },
@@ -313,9 +339,18 @@ const updateTaskStatus = async (
 		);
 	}
 
+	// Validate status transition
+	const allowed = validTaskTransitions[task.status];
+	if (!allowed || !allowed.includes(status)) {
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			`Cannot transition from ${task.status.toLowerCase} to ${status.toLowerCase}`,
+		);
+	}
+
 	const updatedTask = await prisma.task.update({
 		where: { id },
-		data: { status: payload.status },
+		data: { status },
 		include: {
 			project: true,
 			employee: {

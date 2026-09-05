@@ -11,10 +11,12 @@ const createDepartment = async (
 	payload: IDepartmentCreatePayload,
 	user: IRequestUser,
 ) => {
+	const { name, description } = payload;
+
 	// Check if department name already exists in this organization
 	const existingDepartment = await prisma.department.findFirst({
 		where: {
-			name: payload.name,
+			name,
 			organizationId: user.organizationId,
 		},
 	});
@@ -28,8 +30,8 @@ const createDepartment = async (
 
 	const department = await prisma.department.create({
 		data: {
-			name: payload.name,
-			description: payload.description,
+			name,
+			description,
 			organizationId: user.organizationId,
 		},
 	});
@@ -93,6 +95,8 @@ const updateDepartment = async (
 	payload: IDepartmentUpdatePayload,
 	user: IRequestUser,
 ) => {
+	const { name, description } = payload;
+
 	const department = await prisma.department.findUnique({
 		where: { id },
 	});
@@ -109,10 +113,10 @@ const updateDepartment = async (
 	}
 
 	// Check if new name conflicts with existing department
-	if (payload.name && payload.name !== department.name) {
+	if (name && name !== department.name) {
 		const existingDepartment = await prisma.department.findFirst({
 			where: {
-				name: payload.name,
+				name,
 				organizationId: user.organizationId,
 			},
 		});
@@ -127,7 +131,7 @@ const updateDepartment = async (
 
 	const updatedDepartment = await prisma.department.update({
 		where: { id },
-		data: payload,
+		data: { name, description },
 	});
 
 	return updatedDepartment;

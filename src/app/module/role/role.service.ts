@@ -91,6 +91,8 @@ const updateRole = async (
 	payload: IRoleUpdatePayload,
 	user: IRequestUser,
 ) => {
+	const { name, description } = payload;
+
 	const role = await prisma.role.findUnique({
 		where: { id },
 	});
@@ -111,10 +113,10 @@ const updateRole = async (
 	}
 
 	// Check if new name conflicts with existing role
-	if (payload.name && payload.name !== role.name) {
+	if (name && name !== role.name) {
 		const existingRole = await prisma.role.findFirst({
 			where: {
-				name: payload.name,
+				name,
 				organizationId: user.organizationId,
 			},
 		});
@@ -129,7 +131,7 @@ const updateRole = async (
 
 	const updatedRole = await prisma.role.update({
 		where: { id },
-		data: payload,
+		data: { name, description },
 	});
 
 	return updatedRole;

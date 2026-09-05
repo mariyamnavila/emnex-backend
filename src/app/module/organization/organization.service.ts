@@ -60,6 +60,8 @@ const updateOrganization = async (
 	payload: IOrganizationUpdatePayload,
 	user: IRequestUser,
 ) => {
+	const { name, slug } = payload;
+
 	const organization = await prisma.organization.findUnique({
 		where: { id },
 	});
@@ -76,9 +78,9 @@ const updateOrganization = async (
 	}
 
 	// Check if slug is already taken by another organization
-	if (payload.slug && payload.slug !== organization.slug) {
+	if (slug && slug !== organization.slug) {
 		const existingSlug = await prisma.organization.findUnique({
-			where: { slug: payload.slug },
+			where: { slug },
 		});
 
 		if (existingSlug) {
@@ -91,7 +93,7 @@ const updateOrganization = async (
 
 	const updatedOrganization = await prisma.organization.update({
 		where: { id },
-		data: payload,
+		data: { name, slug },
 	});
 
 	return updatedOrganization;

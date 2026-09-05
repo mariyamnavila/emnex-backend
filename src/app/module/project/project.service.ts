@@ -12,13 +12,15 @@ const createProject = async (
 	payload: IProjectCreatePayload,
 	user: IRequestUser,
 ) => {
+	const { name, description, startDate, endDate, budget } = payload;
+
 	const project = await prisma.project.create({
 		data: {
-			name: payload.name,
-			description: payload.description,
-			startDate: payload.startDate ? new Date(payload.startDate) : undefined,
-			endDate: payload.endDate ? new Date(payload.endDate) : undefined,
-			budget: payload.budget,
+			name,
+			description,
+			startDate: startDate ? new Date(startDate) : undefined,
+			endDate: endDate ? new Date(endDate) : undefined,
+			budget,
 			organizationId: user.organizationId,
 		},
 	});
@@ -114,6 +116,8 @@ const updateProject = async (
 	payload: IProjectUpdatePayload,
 	user: IRequestUser,
 ) => {
+	const { name, description, startDate, endDate, budget, status } = payload;
+
 	const project = await prisma.project.findUnique({
 		where: { id },
 	});
@@ -132,9 +136,12 @@ const updateProject = async (
 	const updatedProject = await prisma.project.update({
 		where: { id },
 		data: {
-			...payload,
-			startDate: payload.startDate ? new Date(payload.startDate) : undefined,
-			endDate: payload.endDate ? new Date(payload.endDate) : undefined,
+			name,
+			description,
+			startDate: startDate ? new Date(startDate) : undefined,
+			endDate: endDate ? new Date(endDate) : undefined,
+			budget,
+			status,
 		},
 	});
 

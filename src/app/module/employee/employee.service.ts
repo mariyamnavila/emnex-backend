@@ -36,9 +36,11 @@ const createEmployee = async (
 	payload: IEmployeeCreatePayload,
 	user: IRequestUser,
 ) => {
+	const { name, email, roleId, departmentId, jobTitle, salaryType, salary, hourlyRate, joiningDate } = payload;
+
 	// Check if email already exists
 	const existingUser = await prisma.user.findUnique({
-		where: { email: payload.email },
+		where: { email },
 	});
 
 	if (existingUser) {
@@ -51,7 +53,7 @@ const createEmployee = async (
 	// Verify role exists in this organization
 	const role = await prisma.role.findFirst({
 		where: {
-			id: payload.roleId,
+			id: roleId,
 			organizationId: user.organizationId,
 		},
 	});
@@ -64,10 +66,10 @@ const createEmployee = async (
 	}
 
 	// Verify department exists if provided
-	if (payload.departmentId) {
+	if (departmentId) {
 		const department = await prisma.department.findFirst({
 			where: {
-				id: payload.departmentId,
+				id: departmentId,
 				organizationId: user.organizationId,
 			},
 		});
@@ -93,11 +95,11 @@ const createEmployee = async (
 	const result = await prisma.$transaction(async (tx) => {
 		const newUser = await tx.user.create({
 			data: {
-				name: payload.name,
-				email: payload.email,
+				name,
+				email,
 				password: hashedPassword,
 				organizationId: user.organizationId,
-				roleId: payload.roleId,
+				roleId,
 				mustChangePassword: true,
 			},
 			omit: { password: true },
@@ -108,12 +110,12 @@ const createEmployee = async (
 				userId: newUser.id,
 				organizationId: user.organizationId,
 				employeeCode,
-				departmentId: payload.departmentId,
-				jobTitle: payload.jobTitle,
-				salaryType: payload.salaryType,
-				salary: payload.salary,
-				hourlyRate: payload.hourlyRate,
-				joiningDate: new Date(payload.joiningDate),
+				departmentId,
+				jobTitle,
+				salaryType,
+				salary,
+				hourlyRate,
+				joiningDate: new Date(joiningDate),
 			},
 			include: {
 				user: { omit: { password: true } },
