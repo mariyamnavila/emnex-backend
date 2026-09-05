@@ -1,16 +1,16 @@
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import httpStatus from "http-status";
+import config from "../../config";
 import type { IRequestUser } from "../../interfaces";
-import { prisma } from "../../lib/prisma";
 import { sendEmployeeWelcomeEmail } from "../../lib/email";
+import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/AppError";
 import type {
 	IEmployeeCreatePayload,
 	IEmployeeQueryParams,
 	IEmployeeUpdatePayload,
 } from "./employee.interface";
-import config from "../../config";
 
 const generateEmployeeCode = async (organizationId: string) => {
 	const lastEmployee = await prisma.employee.findFirst({
@@ -63,6 +63,23 @@ const createEmployee = async (
 		);
 	}
 
+	// Verify department exists if provided
+	if (payload.departmentId) {
+		const department = await prisma.department.findFirst({
+			where: {
+				id: payload.departmentId,
+				organizationId: user.organizationId,
+			},
+		});
+
+		if (!department) {
+			throw new AppError(
+				httpStatus.NOT_FOUND,
+				"Department not found in this organization",
+			);
+		}
+	}
+
 	const employeeCode = await generateEmployeeCode(user.organizationId);
 
 	// Generate random temporary password
@@ -112,7 +129,7 @@ const createEmployee = async (
 		where: { id: user.organizationId },
 	});
 
-	// Send welcome email (non-blocking)
+	// Send welcome or invation email
 	sendEmployeeWelcomeEmail({
 		to: payload.email,
 		name: payload.name,
@@ -340,7 +357,10 @@ const resendCredentials = async (id: string, user: IRequestUser) => {
 	}
 
 	if (employee.organizationId !== user.organizationId) {
-		throw new AppError(httpStatus.FORBIDDEN, "You can only resend credentials for employees in your organization");
+		throw new AppError(
+			httpStatus.FORBIDDEN,
+			"You can only resend credentials for employees in your organization",
+		);
 	}
 
 	// Generate new temporary password

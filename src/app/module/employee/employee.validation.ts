@@ -5,8 +5,8 @@ const CreateEmployeeZodSchema = z.object({
 		.string()
 		.min(2, "Name must be at least 2 characters")
 		.max(100, "Name must be at most 100 characters"),
-	email: z.string().email("Invalid email address"),
-	roleId: z.string().uuid("Invalid role ID"),
+	email: z.email("Invalid email address"),
+	roleId: z.uuid("Invalid role ID"),
 	departmentId: z.string().uuid("Invalid department ID").optional(),
 	jobTitle: z
 		.string()

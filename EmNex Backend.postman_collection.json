@@ -1117,7 +1117,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"name\": \"Jane Doe\",\n    \"email\": \"jane.doe@emnex.com\",\n    \"departmentId\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"jobTitle\": \"Senior Software Engineer\",\n    \"salaryType\": \"MONTHLY\",\n    \"salary\": 75000,\n    \"joiningDate\": \"2026-01-15T00:00:00.000Z\"\n}",
+              "raw": "{\n    \"name\": \"Jane Doe\",\n    \"email\": \"jane.doe@emnex.com\",\n    \"roleId\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"departmentId\": \"550e8400-e29b-41d4-a716-446655440001\",\n    \"jobTitle\": \"Senior Software Engineer\",\n    \"salaryType\": \"MONTHLY\",\n    \"salary\": 75000,\n    \"joiningDate\": \"2026-01-15T00:00:00.000Z\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1367,6 +1367,45 @@
                 "employees",
                 ":id",
                 "stats"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{employeeId}}",
+                  "description": "Employee ID"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Resend Employee Credentials",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "localhost:5000/api/v1/employees/:id/resend-credentials",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "employees",
+                ":id",
+                "resend-credentials"
               ],
               "variable": [
                 {
