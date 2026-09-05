@@ -1,14 +1,13 @@
 import type { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status";
 import type { JwtPayload } from "jsonwebtoken";
-import { Role } from "../../generated/prisma/client";
 import config from "../config";
 import { prisma } from "../lib/prisma";
 import { AppError } from "../utils/AppError";
 import { catchAsync } from "../utils/catchAsync";
 import { jwtUtils } from "../utils/jwt";
 
-export const auth = (...requiredRoles: Role[]) => {
+export const auth = (...requiredRoles: string[]) => {
 	return catchAsync(async (req: Request, res: Response, next: NextFunction) => {
 		const token = req.cookies.accessToken
 			? req.cookies.accessToken
@@ -29,8 +28,7 @@ export const auth = (...requiredRoles: Role[]) => {
 			throw new AppError(httpStatus.UNAUTHORIZED, verifiedToken.error);
 		}
 
-		const { email, name, userId, role, organizationId } =
-			verifiedToken.data as JwtPayload;
+		const { userId, role } = verifiedToken.data as JwtPayload;
 
 		if (requiredRoles.length && !requiredRoles.includes(role)) {
 			throw new AppError(
@@ -40,12 +38,8 @@ export const auth = (...requiredRoles: Role[]) => {
 		}
 
 		const user = await prisma.user.findUnique({
-			where: {
-				id: userId,
-				email,
-				name,
-				role,
-			},
+			where: { id: userId },
+			include: { role: true },
 		});
 
 		if (!user) {
@@ -70,11 +64,11 @@ export const auth = (...requiredRoles: Role[]) => {
 		}
 
 		req.user = {
-			email,
-			name,
-			userId,
-			role,
-			organizationId,
+			email: user.email,
+			name: user.name,
+			userId: user.id,
+			role: user.role.name,
+			organizationId: user.organizationId,
 		};
 
 		next();

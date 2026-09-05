@@ -13,7 +13,7 @@ async function main() {
 		await seed();
 
 		app.listen(PORT, () => {
-			console.log(`WorkFlow ERP Server is running on port ${PORT}`);
+			console.log(`Emnex Server is running on port ${PORT}`);
 		});
 	} catch (error) {
 		console.error("Error starting server:", error);
