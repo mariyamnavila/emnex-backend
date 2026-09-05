@@ -10,6 +10,7 @@ import config from "./app/config";
 import { globalErrorHandler } from "./app/middleware/globalErrorHandler";
 import { notFound } from "./app/middleware/notFound";
 import { AuthRoutes } from "./app/module/auth/auth.route";
+import { OrganizationRoutes } from "./app/module/organization/organization.route";
 
 const app: Application = express();
 
@@ -26,6 +27,7 @@ app.use(cookieParser());
 
 // Routes
 app.use("/api/v1/auth", AuthRoutes);
+app.use("/api/v1/organizations", OrganizationRoutes);
 
 app.get("/", async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json({
