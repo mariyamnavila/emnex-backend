@@ -1,0 +1,19 @@
+model Role {
+  id          String  @id @default(uuid())
+  name        String
+  description String?
+  isSystem    Boolean @default(false)
+
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  users       User[]
+  permissions RolePermission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("roles")
+}
