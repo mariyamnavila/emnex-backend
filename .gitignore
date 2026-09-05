@@ -1,7 +1,19 @@
 node_modules
-# Keep environment variables out of version control
 .env
+.env.*
+!.env.example
+dist
 
-/generated/prisma
+/src/generated
 
+todo.md
 assignment.md
+workflow.md
+
+# Lock Files
+pnpm-lock.yaml
+yarn.lock
+package-lock.json
+pnpm-workspace.yaml
+.vscode
+.vercel
