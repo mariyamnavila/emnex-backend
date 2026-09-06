@@ -30,11 +30,10 @@
               }
             },
             "url": {
-              "raw": "localhost:5000/api/v1/auth/register",
+              "raw": "{{baseUrl}}/api/v1/auth/register",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -66,11 +65,10 @@
               }
             },
             "url": {
-              "raw": "localhost:5000/api/v1/auth/login",
+              "raw": "{{baseUrl}}/api/v1/auth/login",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -100,11 +98,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/auth/me",
+              "raw": "{{baseUrl}}/api/v1/auth/me",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -136,11 +133,10 @@
               }
             },
             "url": {
-              "raw": "localhost:5000/api/v1/auth/refresh-token",
+              "raw": "{{baseUrl}}/api/v1/auth/refresh-token",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -177,11 +173,10 @@
               }
             },
             "url": {
-              "raw": "localhost:5000/api/v1/auth/change-password",
+              "raw": "{{baseUrl}}/api/v1/auth/change-password",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -214,11 +209,10 @@
               ]
             },
             "url": {
-              "raw": "localhost:5000/api/v1/auth/upload-avatar",
+              "raw": "{{baseUrl}}/api/v1/auth/upload-avatar",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -245,11 +239,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/auth/logout",
+              "raw": "{{baseUrl}}/api/v1/auth/logout",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -286,11 +279,10 @@
               }
             },
             "url": {
-              "raw": "localhost:5000/api/v1/auth/google",
+              "raw": "{{baseUrl}}/api/v1/auth/google",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -325,11 +317,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/organizations/me",
+              "raw": "{{baseUrl}}/api/v1/organizations/me",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -359,11 +350,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/organizations/:id",
+              "raw": "{{baseUrl}}/api/v1/organizations/:id",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -407,11 +397,10 @@
               }
             },
             "url": {
-              "raw": "localhost:5000/api/v1/organizations/:id",
+              "raw": "{{baseUrl}}/api/v1/organizations/:id",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -448,11 +437,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/organizations/:id/stats",
+              "raw": "{{baseUrl}}/api/v1/organizations/:id/stats",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -502,11 +490,10 @@
               }
             },
             "url": {
-              "raw": "localhost:5000/api/v1/roles",
+              "raw": "{{baseUrl}}/api/v1/roles",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -535,11 +522,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/roles",
+              "raw": "{{baseUrl}}/api/v1/roles",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -568,11 +554,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/roles/:id",
+              "raw": "{{baseUrl}}/api/v1/roles/:id",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -616,11 +601,10 @@
               }
             },
             "url": {
-              "raw": "localhost:5000/api/v1/roles/:id",
+              "raw": "{{baseUrl}}/api/v1/roles/:id",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -654,11 +638,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/roles/:id",
+              "raw": "{{baseUrl}}/api/v1/roles/:id",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -695,11 +678,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/roles/permissions/all",
+              "raw": "{{baseUrl}}/api/v1/roles/permissions/all",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -730,11 +712,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/roles/:roleId/permissions",
+              "raw": "{{baseUrl}}/api/v1/roles/:roleId/permissions",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -779,11 +760,10 @@
               }
             },
             "url": {
-              "raw": "localhost:5000/api/v1/roles/:roleId/permissions",
+              "raw": "{{baseUrl}}/api/v1/roles/:roleId/permissions",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -818,11 +798,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/roles/:roleId/permissions/:permissionId",
+              "raw": "{{baseUrl}}/api/v1/roles/:roleId/permissions/:permissionId",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -878,11 +857,10 @@
               }
             },
             "url": {
-              "raw": "localhost:5000/api/v1/departments",
+              "raw": "{{baseUrl}}/api/v1/departments",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -911,11 +889,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/departments",
+              "raw": "{{baseUrl}}/api/v1/departments",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -944,11 +921,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/departments/:id",
+              "raw": "{{baseUrl}}/api/v1/departments/:id",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -992,11 +968,10 @@
               }
             },
             "url": {
-              "raw": "localhost:5000/api/v1/departments/:id",
+              "raw": "{{baseUrl}}/api/v1/departments/:id",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -1030,11 +1005,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/departments/:id",
+              "raw": "{{baseUrl}}/api/v1/departments/:id",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -1071,11 +1045,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/departments/:id/employees",
+              "raw": "{{baseUrl}}/api/v1/departments/:id/employees",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -1125,11 +1098,10 @@
               }
             },
             "url": {
-              "raw": "localhost:5000/api/v1/employees",
+              "raw": "{{baseUrl}}/api/v1/employees",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -1158,11 +1130,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/employees?page=1&limit=10&search=Jane&status=ACTIVE&sortBy=createdAt&sortOrder=desc",
+              "raw": "{{baseUrl}}/api/v1/employees?page=1&limit=10&search=Jane&status=ACTIVE&sortBy=createdAt&sortOrder=desc",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -1229,11 +1200,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/employees/:id",
+              "raw": "{{baseUrl}}/api/v1/employees/:id",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -1277,11 +1247,10 @@
               }
             },
             "url": {
-              "raw": "localhost:5000/api/v1/employees/:id",
+              "raw": "{{baseUrl}}/api/v1/employees/:id",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -1315,11 +1284,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/employees/:id",
+              "raw": "{{baseUrl}}/api/v1/employees/:id",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -1356,11 +1324,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/employees/:id/stats",
+              "raw": "{{baseUrl}}/api/v1/employees/:id/stats",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -1395,11 +1362,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/employees/:id/resend-credentials",
+              "raw": "{{baseUrl}}/api/v1/employees/:id/resend-credentials",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -1449,11 +1415,10 @@
               }
             },
             "url": {
-              "raw": "localhost:5000/api/v1/projects",
+              "raw": "{{baseUrl}}/api/v1/projects",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -1482,11 +1447,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/projects?page=1&limit=10&search=Mobile&status=ACTIVE",
+              "raw": "{{baseUrl}}/api/v1/projects?page=1&limit=10&search=Mobile&status=ACTIVE",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -1537,11 +1501,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/projects/:id",
+              "raw": "{{baseUrl}}/api/v1/projects/:id",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -1585,11 +1548,10 @@
               }
             },
             "url": {
-              "raw": "localhost:5000/api/v1/projects/:id",
+              "raw": "{{baseUrl}}/api/v1/projects/:id",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -1623,11 +1585,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/projects/:id",
+              "raw": "{{baseUrl}}/api/v1/projects/:id",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -1664,11 +1625,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/projects/:id/tasks",
+              "raw": "{{baseUrl}}/api/v1/projects/:id/tasks",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -1706,11 +1666,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/projects/:id/stats",
+              "raw": "{{baseUrl}}/api/v1/projects/:id/stats",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -1753,11 +1712,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/tasks/my",
+              "raw": "{{baseUrl}}/api/v1/tasks/my",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -1794,11 +1752,10 @@
               }
             },
             "url": {
-              "raw": "localhost:5000/api/v1/tasks",
+              "raw": "{{baseUrl}}/api/v1/tasks",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -1827,11 +1784,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/tasks?page=1&limit=10&search=Authentication&status=IN_PROGRESS&priority=HIGH",
+              "raw": "{{baseUrl}}/api/v1/tasks?page=1&limit=10&search=Authentication&status=IN_PROGRESS&priority=HIGH",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -1899,11 +1855,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/tasks/:id",
+              "raw": "{{baseUrl}}/api/v1/tasks/:id",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -1947,11 +1902,10 @@
               }
             },
             "url": {
-              "raw": "localhost:5000/api/v1/tasks/:id",
+              "raw": "{{baseUrl}}/api/v1/tasks/:id",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -1985,11 +1939,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/tasks/:id",
+              "raw": "{{baseUrl}}/api/v1/tasks/:id",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -2033,11 +1986,10 @@
               }
             },
             "url": {
-              "raw": "localhost:5000/api/v1/tasks/:id/assign",
+              "raw": "{{baseUrl}}/api/v1/tasks/:id/assign",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -2082,11 +2034,10 @@
               }
             },
             "url": {
-              "raw": "localhost:5000/api/v1/tasks/:id/status",
+              "raw": "{{baseUrl}}/api/v1/tasks/:id/status",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -2124,11 +2075,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/tasks/:id/submissions",
+              "raw": "{{baseUrl}}/api/v1/tasks/:id/submissions",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -2171,11 +2121,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/submissions/my",
+              "raw": "{{baseUrl}}/api/v1/submissions/my",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -2212,11 +2161,10 @@
               }
             },
             "url": {
-              "raw": "localhost:5000/api/v1/submissions",
+              "raw": "{{baseUrl}}/api/v1/submissions",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -2245,11 +2193,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/submissions?page=1&limit=10&status=PENDING",
+              "raw": "{{baseUrl}}/api/v1/submissions?page=1&limit=10&status=PENDING",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -2307,11 +2254,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/submissions/:id",
+              "raw": "{{baseUrl}}/api/v1/submissions/:id",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -2355,11 +2301,10 @@
               }
             },
             "url": {
-              "raw": "localhost:5000/api/v1/submissions/:id",
+              "raw": "{{baseUrl}}/api/v1/submissions/:id",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -2393,11 +2338,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/submissions/:id/approve",
+              "raw": "{{baseUrl}}/api/v1/submissions/:id/approve",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -2442,11 +2386,10 @@
               }
             },
             "url": {
-              "raw": "localhost:5000/api/v1/submissions/:id/reject",
+              "raw": "{{baseUrl}}/api/v1/submissions/:id/reject",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -2489,11 +2432,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/payroll/my",
+              "raw": "{{baseUrl}}/api/v1/payroll/my",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -2523,11 +2465,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/payroll/summary",
+              "raw": "{{baseUrl}}/api/v1/payroll/summary",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -2564,11 +2505,10 @@
               }
             },
             "url": {
-              "raw": "localhost:5000/api/v1/payroll/generate",
+              "raw": "{{baseUrl}}/api/v1/payroll/generate",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -2598,11 +2538,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/payroll?page=1&limit=10",
+              "raw": "{{baseUrl}}/api/v1/payroll?page=1&limit=10",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -2655,11 +2594,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/payroll/:id",
+              "raw": "{{baseUrl}}/api/v1/payroll/:id",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -2693,11 +2631,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/payroll/:id/approve",
+              "raw": "{{baseUrl}}/api/v1/payroll/:id/approve",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -2732,11 +2669,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/payroll/:id/reject",
+              "raw": "{{baseUrl}}/api/v1/payroll/:id/reject",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -2787,11 +2723,10 @@
               }
             },
             "url": {
-              "raw": "localhost:5000/api/v1/payments/webhook",
+              "raw": "{{baseUrl}}/api/v1/payments/webhook",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -2821,11 +2756,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/payments/my",
+              "raw": "{{baseUrl}}/api/v1/payments/my",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -2862,11 +2796,10 @@
               }
             },
             "url": {
-              "raw": "localhost:5000/api/v1/payments",
+              "raw": "{{baseUrl}}/api/v1/payments",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -2895,11 +2828,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/payments?page=1&limit=10",
+              "raw": "{{baseUrl}}/api/v1/payments?page=1&limit=10",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -2952,11 +2884,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/payments/:id",
+              "raw": "{{baseUrl}}/api/v1/payments/:id",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -2993,11 +2924,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/payments/:id/status",
+              "raw": "{{baseUrl}}/api/v1/payments/:id/status",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -3040,11 +2970,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/analytics/dashboard",
+              "raw": "{{baseUrl}}/api/v1/analytics/dashboard",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -3074,11 +3003,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/analytics/employees",
+              "raw": "{{baseUrl}}/api/v1/analytics/employees",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -3108,11 +3036,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/analytics/projects",
+              "raw": "{{baseUrl}}/api/v1/analytics/projects",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -3142,11 +3069,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/analytics/payroll",
+              "raw": "{{baseUrl}}/api/v1/analytics/payroll",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -3176,11 +3102,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/analytics/payments",
+              "raw": "{{baseUrl}}/api/v1/analytics/payments",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -3215,11 +3140,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/audit-logs?page=1&limit=20",
+              "raw": "{{baseUrl}}/api/v1/audit-logs?page=1&limit=20",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -3278,11 +3202,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/api/v1/audit-logs/:id",
+              "raw": "{{baseUrl}}/api/v1/audit-logs/:id",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 "api",
                 "v1",
@@ -3318,11 +3241,10 @@
               "raw": ""
             },
             "url": {
-              "raw": "localhost:5000/",
+              "raw": "{{baseUrl}}/",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "5000",
               "path": [
                 ""
               ]
@@ -3336,7 +3258,7 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "localhost:5000",
+      "value": "https://emnex-api.vercel.app",
       "type": "string"
     },
     {

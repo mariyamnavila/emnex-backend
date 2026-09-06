@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import httpStatus from "http-status";
+import config from "../../config";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import type { IRequestUser } from "./auth.interface";
@@ -12,14 +13,14 @@ const register = catchAsync(async (req: Request, res: Response) => {
 
 	res.cookie("accessToken", result.accessToken, {
 		httpOnly: true,
-		secure: false,
+		secure: config.node_env === "production",
 		sameSite: "none",
 		maxAge: 1000 * 60 * 60 * 24, // 24 hours
 	});
 
 	res.cookie("refreshToken", result.refreshToken, {
 		httpOnly: true,
-		secure: false,
+		secure: config.node_env === "production",
 		sameSite: "none",
 		maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
 	});
@@ -44,14 +45,14 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
 
 	res.cookie("accessToken", result.accessToken, {
 		httpOnly: true,
-		secure: false,
+		secure: config.node_env === "production",
 		sameSite: "none",
 		maxAge: 1000 * 60 * 60 * 24,
 	});
 
 	res.cookie("refreshToken", result.refreshToken, {
 		httpOnly: true,
-		secure: false,
+		secure: config.node_env === "production",
 		sameSite: "none",
 		maxAge: 1000 * 60 * 60 * 24 * 7,
 	});
@@ -90,14 +91,14 @@ const refreshToken = catchAsync(async (req: Request, res: Response) => {
 
 	res.cookie("accessToken", result.accessToken, {
 		httpOnly: true,
-		secure: false,
+		secure: config.node_env === "production",
 		sameSite: "none",
 		maxAge: 1000 * 60 * 60 * 24,
 	});
 
 	res.cookie("refreshToken", result.refreshToken, {
 		httpOnly: true,
-		secure: false,
+		secure: config.node_env === "production",
 		sameSite: "none",
 		maxAge: 1000 * 60 * 60 * 24 * 7,
 	});
@@ -168,14 +169,14 @@ const googleLogin = catchAsync(async (req: Request, res: Response) => {
 
 	res.cookie("accessToken", result.accessToken, {
 		httpOnly: true,
-		secure: false,
+		secure: config.node_env === "production",
 		sameSite: "none",
 		maxAge: 1000 * 60 * 60 * 24,
 	});
 
 	res.cookie("refreshToken", result.refreshToken, {
 		httpOnly: true,
-		secure: false,
+		secure: config.node_env === "production",
 		sameSite: "none",
 		maxAge: 1000 * 60 * 60 * 24 * 7,
 	});
