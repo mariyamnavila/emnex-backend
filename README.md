@@ -294,4 +294,4 @@ Models WITHOUT soft delete (hard delete not used — records are permanent):
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — Project structure, middleware, utilities, and design patterns
 - [DATABASE.md](./DATABASE.md) — Complete database schema with all models, relations, and indexes
 - [API_INTEGRATION.md](./API_INTEGRATION.md) — All 52 API endpoints with request/response examples
-- [WORKFLOW.md](./WORKFLOW.md) — System flows, data pipelines, and module connections
+- [WORKFLOW.md](./workflow.md) — System flows, data pipelines, and module connections
