@@ -143,6 +143,18 @@ const updateRole = async (
 				"Role name already exists in this organization",
 			);
 		}
+
+		// Prevent renaming if role is assigned to users
+		const userCount = await prisma.user.count({
+			where: { roleId: id },
+		});
+
+		if (userCount > 0) {
+			throw new AppError(
+				httpStatus.BAD_REQUEST,
+				"Cannot rename role that is assigned to users. Reassign users first.",
+			);
+		}
 	}
 
 	const updatedRole = await prisma.role.update({
@@ -263,7 +275,49 @@ const assignPermissions = async (
 		);
 	}
 
+	// Prevent modifying own role
+	const currentUser = await prisma.user.findUnique({
+		where: { id: user.userId },
+	});
+
+	if (currentUser?.roleId === roleId) {
+		throw new AppError(
+			httpStatus.FORBIDDEN,
+			"Cannot modify permissions of your own role",
+		);
+	}
+
 	const permissionIds = [...new Set(payload.permissionIds)];
+
+	// Get user's own permissions to validate they can only assign what they have
+	const userWithRole = await prisma.user.findUnique({
+		where: { id: user.userId },
+		include: {
+			role: {
+				include: {
+					permissions: {
+						select: { permissionId: true },
+					},
+				},
+			},
+		},
+	});
+
+	const userPermissionIds = new Set(
+		userWithRole?.role.permissions.map((rp) => rp.permissionId) || [],
+	);
+
+	// Check if user is trying to assign permissions they don't have
+	const unauthorizedPerms = permissionIds.filter(
+		(permId) => !userPermissionIds.has(permId),
+	);
+
+	if (unauthorizedPerms.length > 0) {
+		throw new AppError(
+			httpStatus.FORBIDDEN,
+			`You cannot assign permissions you don't have: ${unauthorizedPerms.join(", ")}`,
+		);
+	}
 
 	const permissions = await prisma.permission.findMany({
 		where: {

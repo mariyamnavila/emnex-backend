@@ -23,6 +23,7 @@ model User {
   isActive           Boolean    @default(true)
   isDeleted          Boolean    @default(false)
   mustChangePassword Boolean    @default(false)
+  tokenVersion       Int        @default(0)
   deletedAt          DateTime?
 
   createdAt DateTime @default(now())

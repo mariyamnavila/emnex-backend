@@ -31,7 +31,10 @@ export const auth = () => {
 
 		const user = await prisma.user.findUnique({
 			where: { id: userId },
-			include: { role: true },
+			include: {
+				role: true,
+				employee: true,
+			},
 		});
 
 		if (!user) {
@@ -52,6 +55,14 @@ export const auth = () => {
 			throw new AppError(
 				httpStatus.FORBIDDEN,
 				"Your account has been deleted.",
+			);
+		}
+
+		// Check if employee is terminated
+		if (user.employee?.status === "TERMINATED") {
+			throw new AppError(
+				httpStatus.FORBIDDEN,
+				"Your account has been terminated. Please contact support.",
 			);
 		}
 

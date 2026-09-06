@@ -255,6 +255,18 @@ const approveSubmission = async (id: string, user: IRequestUser) => {
 		);
 	}
 
+	// Prevent self-approval
+	const currentUserEmployee = await prisma.employee.findUnique({
+		where: { userId: user.userId },
+	});
+
+	if (currentUserEmployee && currentUserEmployee.id === submission.employeeId) {
+		throw new AppError(
+			httpStatus.FORBIDDEN,
+			"Cannot approve your own submission",
+		);
+	}
+
 	// Validate status transition
 	const allowed = validSubmissionTransitions[submission.status];
 	if (!allowed || !allowed.includes("APPROVED")) {

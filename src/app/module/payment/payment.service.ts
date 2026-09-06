@@ -163,6 +163,11 @@ const handleWebhook = async (rawBody: string | Buffer, signature: string) => {
 			throw new AppError(httpStatus.NOT_FOUND, "Payment not found");
 		}
 
+		// Idempotency check - skip if already completed
+		if (payment.status === "COMPLETED") {
+			return { received: true };
+		}
+
 		await prisma.$transaction([
 			prisma.payment.update({
 				where: { id: payment.id },
@@ -190,6 +195,11 @@ const handleWebhook = async (rawBody: string | Buffer, signature: string) => {
 
 		if (!payment) return { received: true };
 
+		// Idempotency check - skip if already failed or completed
+		if (payment.status === "FAILED" || payment.status === "COMPLETED") {
+			return { received: true };
+		}
+
 		await prisma.payment.update({
 			where: { id: payment.id },
 			data: { status: "FAILED" },
@@ -203,7 +213,7 @@ const handleWebhook = async (rawBody: string | Buffer, signature: string) => {
 			where: { transactionId: paymentIntent.id },
 		});
 
-		if (payment) {
+		if (payment && payment.status !== "FAILED" && payment.status !== "COMPLETED") {
 			await prisma.payment.update({
 				where: { id: payment.id },
 				data: { status: "FAILED" },

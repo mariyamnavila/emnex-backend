@@ -1,6 +1,7 @@
 import httpStatus from "http-status";
 import type { IRequestUser } from "../../interfaces";
 import { prisma } from "../../lib/prisma";
+import { checkUserPermission } from "../../middleware/checkPermission";
 import { AppError } from "../../utils/AppError";
 import { AuditAction, createAuditLog } from "../../utils/auditLog";
 import type {
@@ -39,6 +40,18 @@ const generatePayroll = async (
 
 	if (!employee) {
 		throw new AppError(httpStatus.NOT_FOUND, "Employee not found");
+	}
+
+	// Prevent self-generation
+	const currentUserEmployee = await prisma.employee.findUnique({
+		where: { userId: user.userId },
+	});
+
+	if (currentUserEmployee && currentUserEmployee.id === employeeId) {
+		throw new AppError(
+			httpStatus.FORBIDDEN,
+			"Cannot generate payroll for yourself",
+		);
 	}
 
 	// Check if payroll already exists for this period
@@ -196,6 +209,21 @@ const getPayrollById = async (id: string, user: IRequestUser) => {
 		);
 	}
 
+	// If user has only view_own permission, they can only see their own payroll
+	const hasFullView = await checkUserPermission(user.userId, "payroll.view");
+	if (!hasFullView) {
+		const employee = await prisma.employee.findUnique({
+			where: { userId: user.userId },
+		});
+
+		if (!employee || payroll.employeeId !== employee.id) {
+			throw new AppError(
+				httpStatus.FORBIDDEN,
+				"You can only view your own payroll",
+			);
+		}
+	}
+
 	return formatPayroll(payroll);
 };
 
@@ -238,6 +266,15 @@ const approvePayroll = async (id: string, user: IRequestUser) => {
 		);
 	}
 
+	// Prevent self-approval
+	const currentUserEmployee = await prisma.employee.findUnique({
+		where: { userId: user.userId },
+	});
+
+	if (currentUserEmployee && currentUserEmployee.id === payroll.employeeId) {
+		throw new AppError(httpStatus.FORBIDDEN, "Cannot approve your own payroll");
+	}
+
 	if (payroll.status !== "DRAFT" && payroll.status !== "GENERATED") {
 		throw new AppError(
 			httpStatus.BAD_REQUEST,
@@ -268,10 +305,7 @@ const approvePayroll = async (id: string, user: IRequestUser) => {
 	return formatPayroll(updatedPayroll);
 };
 
-const rejectPayroll = async (
-	id: string,
-	user: IRequestUser,
-) => {
+const rejectPayroll = async (id: string, user: IRequestUser) => {
 	const payroll = await prisma.payroll.findUnique({
 		where: { id },
 	});

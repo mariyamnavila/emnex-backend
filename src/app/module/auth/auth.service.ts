@@ -132,6 +132,7 @@ const register = async (payload: IRegisterPayload) => {
 		email: result.user.email,
 		role: "ADMIN",
 		organizationId: result.organization.id,
+		tokenVersion: 0,
 	};
 
 	const accessToken = jwtUtils.createToken(
@@ -200,6 +201,7 @@ const loginUser = async (payload: ILoginPayload) => {
 		email: user.email,
 		role: user.role.name,
 		organizationId: user.organizationId,
+		tokenVersion: user.tokenVersion,
 	};
 
 	const accessToken = jwtUtils.createToken(
@@ -272,12 +274,21 @@ const refreshToken = async (token: string) => {
 		);
 	}
 
+	// Check if token version matches (invalidates tokens after password change)
+	if (verified.data.tokenVersion !== undefined && verified.data.tokenVersion !== user.tokenVersion) {
+		throw new AppError(
+			httpStatus.UNAUTHORIZED,
+			"Token has been invalidated. Please login again.",
+		);
+	}
+
 	const jwtPayload = {
 		userId: user.id,
 		name: user.name,
 		email: user.email,
 		role: user.role.name,
 		organizationId: user.organizationId,
+		tokenVersion: user.tokenVersion,
 	};
 
 	const accessToken = jwtUtils.createToken(
@@ -329,11 +340,13 @@ const changePassword = async (
 		Number(config.bcrypt_salt_rounds),
 	);
 
+	// Increment tokenVersion to invalidate all existing tokens
 	await prisma.user.update({
 		where: { id: user.userId },
 		data: {
 			password: hashedNewPassword,
 			mustChangePassword: false,
+			tokenVersion: { increment: 1 },
 		},
 	});
 
@@ -452,6 +465,7 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
 		email: user.email,
 		role: user.role.name,
 		organizationId: user.organizationId,
+		tokenVersion: user.tokenVersion,
 	};
 
 	const accessToken = jwtUtils.createToken(

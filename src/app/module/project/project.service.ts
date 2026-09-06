@@ -176,11 +176,6 @@ const updateProject = async (
 const deleteProject = async (id: string, user: IRequestUser) => {
 	const project = await prisma.project.findUnique({
 		where: { id },
-		include: {
-			_count: {
-				select: { tasks: true },
-			},
-		},
 	});
 
 	if (!project) {
@@ -194,10 +189,18 @@ const deleteProject = async (id: string, user: IRequestUser) => {
 		);
 	}
 
-	if (project._count.tasks > 0) {
+	// Count only non-deleted tasks
+	const activeTaskCount = await prisma.task.count({
+		where: {
+			projectId: id,
+			deletedAt: null,
+		},
+	});
+
+	if (activeTaskCount > 0) {
 		throw new AppError(
 			httpStatus.BAD_REQUEST,
-			"Cannot delete project with assigned tasks. Remove tasks first.",
+			"Cannot delete project with active tasks. Remove tasks first.",
 		);
 	}
 

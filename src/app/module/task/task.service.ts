@@ -244,9 +244,6 @@ const deleteTask = async (id: string, user: IRequestUser) => {
 		where: { id },
 		include: {
 			project: true,
-			_count: {
-				select: { submissions: true },
-			},
 		},
 	});
 
@@ -266,6 +263,18 @@ const deleteTask = async (id: string, user: IRequestUser) => {
 		throw new AppError(
 			httpStatus.BAD_REQUEST,
 			`Cannot delete task with ${task.status} status. Only TODO or COMPLETED tasks can be deleted.`,
+		);
+	}
+
+	// Check if task has any submissions
+	const submissionCount = await prisma.workSubmission.count({
+		where: { taskId: id },
+	});
+
+	if (submissionCount > 0) {
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			"Cannot delete task with existing submissions. Remove submissions first.",
 		);
 	}
 

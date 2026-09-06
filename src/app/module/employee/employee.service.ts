@@ -272,6 +272,14 @@ const updateEmployee = async (
 		);
 	}
 
+	// Prevent self-status change to TERMINATED
+	if (employee.userId === user.userId && payload.status === "TERMINATED") {
+		throw new AppError(
+			httpStatus.FORBIDDEN,
+			"Cannot terminate your own account",
+		);
+	}
+
 	const updatedEmployee = await prisma.employee.update({
 		where: { id },
 		data: payload,
@@ -305,6 +313,14 @@ const deleteEmployee = async (id: string, user: IRequestUser) => {
 		throw new AppError(
 			httpStatus.FORBIDDEN,
 			"You can only delete employees in your organization",
+		);
+	}
+
+	// Prevent self-deletion
+	if (employee.userId === user.userId) {
+		throw new AppError(
+			httpStatus.FORBIDDEN,
+			"Cannot terminate your own account",
 		);
 	}
 
