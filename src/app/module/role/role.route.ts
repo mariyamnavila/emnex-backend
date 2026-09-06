@@ -16,6 +16,9 @@ router.post(
 
 router.get("/", auth(), RoleController.getAllRoles);
 
+// Permission management (must be before /:id)
+router.get("/permissions/all", auth(), RoleController.getAllPermissions);
+
 router.get("/:id", auth(), RoleController.getRoleById);
 
 router.patch(
@@ -26,9 +29,6 @@ router.patch(
 );
 
 router.delete("/:id", auth("ADMIN"), RoleController.deleteRole);
-
-// Permission management
-router.get("/permissions/all", auth(), RoleController.getAllPermissions);
 
 router.get("/:roleId/permissions", auth(), RoleController.getRolePermissions);
 

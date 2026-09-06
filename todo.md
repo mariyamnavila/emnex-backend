@@ -1,219 +1,300 @@
-# WorkFlow ERP — Development Todo
+# EmNex Backend — Development Todo
 
-This file is excluded from git commits and serves as a shared checklist to track our development progress on the WorkFlow ERP backend.
+This file is excluded from git commits and serves as a shared checklist to track our development progress on the EmNex backend.
 
 ---
 
 ## Project Phases
 
-### Phase 1: Database & Foundation (Current)
-- [ ] Configure Prisma schema in `prisma/schema/schema.prisma`
-- [ ] Create core PostgreSQL schemas:
-  - [ ] **Enums** (`SalaryType`, `EmployeeStatus`, `ProjectStatus`, `TaskStatus`, `TaskPriority`, `SubmissionStatus`, `PayrollStatus`, `PaymentGateway`, `PaymentStatus`)
-  - [ ] **Organization** (multi-tenant root)
-  - [ ] **User** (with role, org, soft delete)
-  - [ ] **Role** & **Permission** & **RolePermission** (custom RBAC)
-  - [ ] **Department** (org-scoped)
-  - [ ] **Employee** (linked to User)
-  - [ ] **Project** (org-scoped)
-  - [ ] **Task** (assigned to employee, linked to project)
-  - [ ] **WorkSubmission** (employee submits completed work)
-  - [ ] **Payroll** (generated from approved work)
-  - [ ] **Payment** (Stripe integration)
-  - [ ] **AuditLog** (track all critical actions)
-- [ ] Run `npx prisma migrate dev`
-- [ ] Seed default data (system roles + permissions)
-- [ ] Set up folder structure (modular monolith)
-- [ ] Exclude `todo.md` from git commit using `.gitignore`
+### Phase 1: Database & Foundation
+- [x] Configure Prisma schema in `prisma/schema/*.prisma` (multi-file)
+- [x] Create core PostgreSQL schemas:
+  - [x] **Enums** (SalaryType, EmployeeStatus, ProjectStatus, TaskStatus, TaskPriority, SubmissionStatus, PayrollStatus, PaymentGateway, PaymentStatus, AuditAction, etc.)
+  - [x] **Organization** (multi-tenant root)
+  - [x] **User** (with role, org, soft delete)
+  - [x] **Role** & **Permission** & **RolePermission** (custom RBAC)
+  - [x] **Department** (org-scoped)
+  - [x] **Employee** (linked to User)
+  - [x] **Project** (org-scoped)
+  - [x] **Task** (assigned to single employee, linked to project)
+  - [x] **WorkSubmission** (employee submits completed work)
+  - [x] **Payroll** (generated from approved work)
+  - [x] **Payment** (Stripe checkout session)
+  - [x] **AuditLog** (track all critical actions)
+- [x] Run `npx prisma migrate dev`
+- [x] Seed default data (system roles + permissions)
+- [x] Set up folder structure (modular monolith)
 
 ---
 
 ### Phase 2: Core Utilities & Middleware
-- [ ] Create `src/app/utils/AppError.ts` (custom error class)
-- [ ] Create `src/app/utils/catchAsync.ts` (async error wrapper)
-- [ ] Create `src/app/utils/jwt.ts` (createToken / verifyToken)
-- [ ] Create `src/app/utils/sendResponse.ts` (standardized response)
-- [ ] Create `src/app/interfaces/index.ts` (shared types)
-- [ ] Create `src/app/lib/prisma.ts` (Prisma client)
-- [ ] Create `src/app/lib/redis.ts` (Redis client)
-- [ ] Create `src/app/middleware/checkAuth.ts` (JWT auth + role check)
-- [ ] Create `src/app/middleware/validateRequest.ts` (Zod validation)
-- [ ] Create `src/app/middleware/globalErrorHandler.ts`
-- [ ] Create `src/app/middleware/notFound.ts`
+- [x] Create `src/app/utils/AppError.ts` (custom error class)
+- [x] Create `src/app/utils/catchAsync.ts` (async error wrapper)
+- [x] Create `src/app/utils/jwt.ts` (createToken / verifyToken)
+- [x] Create `src/app/utils/sendResponse.ts` (standardized response)
+- [x] Create `src/app/interfaces/index.ts` (shared types)
+- [x] Create `src/app/lib/prisma.ts` (Prisma client with PrismaPg adapter)
+- [x] Create `src/app/lib/redis.ts` (Redis client)
+- [x] Create `src/app/middleware/checkAuth.ts` (JWT auth + role check)
+- [x] Create `src/app/middleware/validateRequest.ts` (Zod validation)
+- [x] Create `src/app/middleware/globalErrorHandler.ts`
+- [x] Create `src/app/middleware/notFound.ts`
+- [x] Create `src/app/utils/employeeStatus.ts` (shared status check functions)
+- [x] Create `src/app/utils/auditLog.ts` (fire-and-forget audit logging)
 
 ---
 
 ### Phase 3: Authentication & User Management
-- [ ] Implement company registration + admin user (`POST /api/v1/auth/register`)
-- [ ] Implement user login (`POST /api/v1/auth/login`)
-- [ ] Implement Google OAuth login (`POST /api/v1/auth/google`)
-- [ ] Implement refresh token (`POST /api/v1/auth/refresh`)
-- [ ] Implement logout (`POST /api/v1/auth/logout`)
-- [ ] Implement get current user (`GET /api/v1/auth/me`)
-- [ ] Implement change password (`POST /api/v1/auth/change-password`)
+- [x] Implement company registration + admin user (`POST /api/v1/auth/register`)
+- [x] Implement user login (`POST /api/v1/auth/login`)
+- [x] Implement Google OAuth login (`POST /api/v1/auth/google`)
+- [x] Implement refresh token (`POST /api/v1/auth/refresh-token`)
+- [x] Implement logout (`POST /api/v1/auth/logout`)
+- [x] Implement get current user (`GET /api/v1/auth/me`)
+- [x] Implement change password (`POST /api/v1/auth/change-password`)
+- [x] Implement upload avatar (`POST /api/v1/auth/upload-avatar`)
 
 ---
 
 ### Phase 4: Organization Management
-- [ ] Implement create organization (`POST /api/v1/organizations`)
-- [ ] Implement get organization details (`GET /api/v1/organizations/:id`)
-- [ ] Implement update organization (`PATCH /api/v1/organizations/:id`)
-- [ ] Implement organization statistics (`GET /api/v1/organizations/:id/stats`)
+- [x] Implement get my organization (`GET /api/v1/organizations/me`)
+- [x] Implement get organization details (`GET /api/v1/organizations/:id`)
+- [x] Implement update organization (`PATCH /api/v1/organizations/:id`)
+- [x] Implement organization statistics (`GET /api/v1/organizations/:id/stats`)
 
 ---
 
 ### Phase 5: Role & Permission Management
-- [ ] Implement create role (`POST /api/v1/roles`)
-- [ ] Implement list roles (`GET /api/v1/roles`)
-- [ ] Implement get role details (`GET /api/v1/roles/:id`)
-- [ ] Implement update role (`PATCH /api/v1/roles/:id`)
-- [ ] Implement delete role (`DELETE /api/v1/roles/:id`)
-- [ ] Implement list permissions (`GET /api/v1/permissions`)
-- [ ] Implement assign permissions to role (`POST /api/v1/roles/:roleId/permissions`)
-- [ ] Implement remove permission from role (`DELETE /api/v1/roles/:roleId/permissions/:permissionId`)
-- [ ] Implement get role permissions (`GET /api/v1/roles/:roleId/permissions`)
+- [x] Implement create role (`POST /api/v1/roles`)
+- [x] Implement list roles (`GET /api/v1/roles`)
+- [x] Implement get role details (`GET /api/v1/roles/:id`)
+- [x] Implement update role (`PATCH /api/v1/roles/:id`)
+- [x] Implement delete role (`DELETE /api/v1/roles/:id`)
+- [x] Implement list all permissions (`GET /api/v1/roles/permissions/all`)
+- [x] Implement get role permissions (`GET /api/v1/roles/:roleId/permissions`)
+- [x] Implement assign permissions to role (`POST /api/v1/roles/:roleId/permissions`)
+- [x] Implement remove permission from role (`DELETE /api/v1/roles/:roleId/permissions/:permissionId`)
 
 ---
 
 ### Phase 6: Department Management
-- [ ] Implement create department (`POST /api/v1/departments`)
-- [ ] Implement list departments with pagination (`GET /api/v1/departments`)
-- [ ] Implement get department details (`GET /api/v1/departments/:id`)
-- [ ] Implement update department (`PATCH /api/v1/departments/:id`)
-- [ ] Implement soft delete department (`DELETE /api/v1/departments/:id`)
-- [ ] Implement list employees in department (`GET /api/v1/departments/:id/employees`)
+- [x] Implement create department (`POST /api/v1/departments`)
+- [x] Implement list departments with pagination (`GET /api/v1/departments`)
+- [x] Implement get department details (`GET /api/v1/departments/:id`)
+- [x] Implement update department (`PATCH /api/v1/departments/:id`)
+- [x] Implement delete department (`DELETE /api/v1/departments/:id`)
+- [x] Implement list employees in department (`GET /api/v1/departments/:id/employees`)
 
 ---
 
 ### Phase 7: Employee Management
-- [ ] Implement create employee with temp password (`POST /api/v1/employees`)
-- [ ] Implement list employees with pagination, search, filter (`GET /api/v1/employees`)
-- [ ] Implement get employee details (`GET /api/v1/employees/:id`)
-- [ ] Implement update employee (`PATCH /api/v1/employees/:id`)
-- [ ] Implement soft delete employee (`DELETE /api/v1/employees/:id`)
-- [ ] Implement employee statistics (`GET /api/v1/employees/:id/stats`)
+- [x] Implement create employee with temp password (`POST /api/v1/employees`)
+- [x] Implement list employees with pagination, search, filter (`GET /api/v1/employees`)
+- [x] Implement get employee details (`GET /api/v1/employees/:id`)
+- [x] Implement update employee (`PATCH /api/v1/employees/:id`)
+- [x] Implement delete employee (`DELETE /api/v1/employees/:id`)
+- [x] Implement employee statistics (`GET /api/v1/employees/:id/stats`)
+- [x] Implement resend credentials (`POST /api/v1/employees/:id/resend-credentials`)
 
 ---
 
 ### Phase 8: Project Management
-- [ ] Implement create project (`POST /api/v1/projects`)
-- [ ] Implement list projects with pagination, filter (`GET /api/v1/projects`)
-- [ ] Implement get project details (`GET /api/v1/projects/:id`)
-- [ ] Implement update project (`PATCH /api/v1/projects/:id`)
-- [ ] Implement soft delete project (`DELETE /api/v1/projects/:id`)
-- [ ] Implement list tasks in project (`GET /api/v1/projects/:id/tasks`)
-- [ ] Implement project statistics (`GET /api/v1/projects/:id/stats`)
+- [x] Implement create project (`POST /api/v1/projects`)
+- [x] Implement list projects with pagination, filter (`GET /api/v1/projects`)
+- [x] Implement get project details (`GET /api/v1/projects/:id`)
+- [x] Implement update project (`PATCH /api/v1/projects/:id`)
+- [x] Implement delete project (`DELETE /api/v1/projects/:id`)
+- [x] Implement list tasks in project (`GET /api/v1/projects/:id/tasks`)
+- [x] Implement project statistics (`GET /api/v1/projects/:id/stats`)
 
 ---
 
 ### Phase 9: Task Management
-- [ ] Implement create task (`POST /api/v1/tasks`)
-- [ ] Implement list tasks with pagination, filter (`GET /api/v1/tasks`)
-- [ ] Implement get task details (`GET /api/v1/tasks/:id`)
-- [ ] Implement update task (`PATCH /api/v1/tasks/:id`)
-- [ ] Implement soft delete task (`DELETE /api/v1/tasks/:id`)
-- [ ] Implement assign task to employee (`POST /api/v1/tasks/:id/assign`)
-- [ ] Implement update task status — state machine (`PATCH /api/v1/tasks/:id/status`)
-- [ ] Implement get my assigned tasks (`GET /api/v1/tasks/my`)
-- [ ] Implement list submissions for task (`GET /api/v1/tasks/:id/submissions`)
+- [x] Implement create task (`POST /api/v1/tasks`)
+- [x] Implement list tasks with pagination, filter (`GET /api/v1/tasks`)
+- [x] Implement get task details (`GET /api/v1/tasks/:id`)
+- [x] Implement update task (`PATCH /api/v1/tasks/:id`)
+- [x] Implement delete task (`DELETE /api/v1/tasks/:id`)
+- [x] Implement assign task to employee (`POST /api/v1/tasks/:id/assign`)
+- [x] Implement update task status — state machine (`PATCH /api/v1/tasks/:id/status`)
+- [x] Implement get my assigned tasks (`GET /api/v1/tasks/my`)
+- [x] Implement list submissions for task (`GET /api/v1/tasks/:id/submissions`)
 
 ---
 
 ### Phase 10: Work Submission & Approval
-- [ ] Implement submit completed work (`POST /api/v1/submissions`)
-- [ ] Implement list submissions with pagination (`GET /api/v1/submissions`)
-- [ ] Implement get submission details (`GET /api/v1/submissions/:id`)
-- [ ] Implement update submission (`PATCH /api/v1/submissions/:id`)
-- [ ] Implement get my submissions (`GET /api/v1/submissions/my`)
-- [ ] Implement approve submission — DB transaction (`POST /api/v1/submissions/:id/approve`)
-- [ ] Implement reject submission with reason (`POST /api/v1/submissions/:id/reject`)
+- [x] Implement submit completed work (`POST /api/v1/submissions`)
+- [x] Implement list submissions with pagination (`GET /api/v1/submissions`)
+- [x] Implement get submission details (`GET /api/v1/submissions/:id`)
+- [x] Implement update submission (`PATCH /api/v1/submissions/:id`)
+- [x] Implement get my submissions (`GET /api/v1/submissions/my`)
+- [x] Implement approve submission — DB transaction (`POST /api/v1/submissions/:id/approve`)
+- [x] Implement reject submission with reason (`POST /api/v1/submissions/:id/reject`)
 
 ---
 
 ### Phase 11: Payroll Management
-- [ ] Implement generate payroll (`POST /api/v1/payroll/generate`)
-- [ ] Implement list payroll records with pagination (`GET /api/v1/payroll`)
-- [ ] Implement get payroll details (`GET /api/v1/payroll/:id`)
-- [ ] Implement get my payroll (`GET /api/v1/payroll/my`)
-- [ ] Implement approve payroll (`POST /api/v1/payroll/:id/approve`)
-- [ ] Implement reject payroll (`POST /api/v1/payroll/:id/reject`)
-- [ ] Implement payroll summary (`GET /api/v1/payroll/summary`)
+- [x] Implement generate payroll (`POST /api/v1/payroll/generate`)
+- [x] Implement list payroll records with pagination (`GET /api/v1/payroll`)
+- [x] Implement get payroll details (`GET /api/v1/payroll/:id`)
+- [x] Implement get my payroll (`GET /api/v1/payroll/my`)
+- [x] Implement approve payroll (`POST /api/v1/payroll/:id/approve`)
+- [x] Implement reject payroll (`POST /api/v1/payroll/:id/reject`)
+- [ ] ~~Implement payroll summary (`GET /api/v1/payroll/summary`)~~ **Removed: duplicate of analytics/payroll**
 
 ---
 
 ### Phase 12: Payment Integration (Stripe)
-- [ ] Integrate Stripe SDK (`src/app/lib/stripe.ts`)
-- [ ] Implement initiate payment (`POST /api/v1/payments`)
-- [ ] Implement create checkout session (`POST /api/v1/payments/checkout`)
-- [ ] Implement Stripe webhook handler (`POST /api/v1/payments/webhook`)
-- [ ] Implement list payments with pagination (`GET /api/v1/payments`)
-- [ ] Implement get payment details (`GET /api/v1/payments/:id`)
-- [ ] Implement get my payments (`GET /api/v1/payments/my`)
-- [ ] Implement check payment status (`GET /api/v1/payments/:id/status`)
+- [x] Integrate Stripe SDK (`src/app/lib/stripe.ts`)
+- [x] Implement create checkout session (`POST /api/v1/payments`)
+- [x] Implement Stripe webhook handler (`POST /api/v1/payments/webhook`)
+- [x] Implement list payments with pagination (`GET /api/v1/payments`)
+- [x] Implement get payment details (`GET /api/v1/payments/:id`)
+- [x] Implement get my payments (`GET /api/v1/payments/my`)
 
 ---
 
 ### Phase 13: Analytics & Audit
-- [ ] Implement admin dashboard stats (`GET /api/v1/analytics/dashboard`)
-- [ ] Implement employee analytics (`GET /api/v1/analytics/employees`)
-- [ ] Implement project analytics (`GET /api/v1/analytics/projects`)
-- [ ] Implement payroll analytics (`GET /api/v1/analytics/payroll`)
-- [ ] Implement payment analytics (`GET /api/v1/analytics/payments`)
-- [ ] Implement list audit logs with pagination, filter (`GET /api/v1/audit-logs`)
-- [ ] Implement get audit log details (`GET /api/v1/audit-logs/:id`)
+- [x] Implement role-based dashboard stats (`GET /api/v1/analytics/dashboard`)
+- [x] Implement employee analytics (`GET /api/v1/analytics/employees`)
+- [x] Implement project analytics (`GET /api/v1/analytics/projects`)
+- [x] Implement payroll analytics (`GET /api/v1/analytics/payroll`)
+- [x] Implement payment analytics (`GET /api/v1/analytics/payments`)
+- [x] Implement list audit logs with pagination, filter (`GET /api/v1/audit-logs`)
+- [x] Implement get audit log details (`GET /api/v1/audit-logs/:id`)
 
 ---
 
 ### Phase 14: App Setup, Security & Final Polish
-- [ ] Mount all routes in `src/app.ts` under `/api/v1/`
-- [ ] Create `src/server.ts` (connect DB + Redis, seed, start)
-- [ ] Add rate limiting (express-rate-limit)
-- [ ] Add helmet security headers
-- [ ] Verify all routes have auth + permission middleware
-- [ ] Verify org isolation on all queries
-- [ ] Verify soft deletes on all major models
-- [ ] Postman collection with all endpoints documented
+- [x] Mount all routes in `src/app.ts` under `/api/v1/`
+- [x] Create `src/server.ts` (connect DB + seed, start)
+- [x] Add rate limiting (express-rate-limit)
+- [x] Add helmet security headers
+- [x] Verify all routes have auth + permission middleware
+- [x] Verify org isolation on all queries
+- [ ] ~~Postman collection~~ **To do**
+- [ ] ~~Verify soft deletes on all major models~~ **Skipped (hard delete)**
 
 ---
 
 ## Git Commits (24 total)
 
-| # | Commit Message |
-|---|---------------|
-| 1 | Project initialization & config setup |
-| 2 | Prisma schema — Organization, User, Role, Permission |
-| 3 | Prisma schema — Department, Employee, Project |
-| 4 | Prisma schema — Task, WorkSubmission, Payroll, Payment, AuditLog |
-| 5 | Core utilities (AppError, catchAsync, jwt, sendResponse) |
-| 6 | Prisma client & Redis client setup |
-| 7 | Middleware (auth, validation, error handler, notFound) |
-| 8 | Seed data — Default roles & permissions |
-| 9 | Auth module — Register (create company + admin) |
-| 10 | Auth module — Login, Refresh, Logout, Me, Change Password |
-| 11 | Auth module — Google OAuth |
-| 12 | App setup & server startup |
-| 13 | Organization module |
-| 14 | Role & Permission module |
-| 15 | Department module |
-| 16 | Employee module |
-| 17 | Project module |
-| 18 | Task module |
-| 19 | Work Submission module (with approval transaction) |
-| 20 | Payroll module |
-| 21 | Payment module — Stripe integration |
-| 22 | Analytics module |
-| 23 | Audit Log module |
-| 24 | Security hardening & final polish |
+| # | Commit Message | Status |
+|---|---------------|--------|
+| 1 | Project initialization & config setup | ✅ |
+| 2 | Prisma schema — enums & core models | ✅ |
+| 3 | Prisma schema — complete schema (all models) | ✅ |
+| 4 | Core utilities (AppError, catchAsync, jwt, sendResponse) | ✅ |
+| 5 | Prisma client & Redis client setup | ✅ |
+| 6 | Middleware (auth, validation, error handler, notFound) | ✅ |
+| 7 | Seed data — Default roles & permissions | ✅ |
+| 8 | Auth module — Register, Login, Refresh, Logout, Me, Change Password | ✅ |
+| 9 | Auth module — Google OAuth | ✅ |
+| 10 | Organization module | ✅ |
+| 11 | Role & Permission module | ✅ |
+| 12 | Department module | ✅ |
+| 13 | Employee module (with resend-credentials) | ✅ |
+| 14 | Project module | ✅ |
+| 15 | Task module (with status transitions) | ✅ |
+| 16 | Work Submission module (with approval transaction) | ✅ |
+| 17 | Employee status checks (INACTIVE/SUSPENDED/TERMINATED) | ✅ |
+| 18 | Employee status utility extraction | ✅ |
+| 19 | Payroll module | ✅ |
+| 20 | Payment module — Stripe integration | ✅ |
+| 21 | Analytics module | ✅ |
+| 22 | Audit Log module with full logging | ✅ |
+| 23 | Fix duplicate endpoints & routing bugs | ✅ |
+| 24 | Security hardening — Rate limiting & Helmet | ✅ |
+
+---
+
+## Implemented Features
+
+### Auth
+- Register (creates company + admin user)
+- Login (email + password)
+- Google OAuth (auto-links by email)
+- Refresh token
+- Logout
+- Get current user (GET /me)
+- Change password (with mustChangePassword flag)
+- Upload avatar (Cloudinary)
+
+### Organization
+- Get my organization
+- Get organization by ID
+- Update organization
+- Organization stats
+
+### Roles & Permissions
+- CRUD for roles (system roles are templates, copied on org creation)
+- 38 permissions across all modules
+- Assign/remove permissions to roles
+
+### Departments
+- CRUD with org isolation
+- List employees in department
+
+### Employees
+- CRUD with org isolation
+- Employee status management (ACTIVE, INACTIVE, SUSPENDED, TERMINATED)
+- Resend credentials
+- Employee stats
+
+### Projects
+- CRUD with org isolation
+- Project stats
+- List tasks in project
+
+### Tasks
+- CRUD with org isolation
+- Assign to single employee (status check: can't assign to SUSPENDED/TERMINATED)
+- Status transitions: TODO→IN_PROGRESS→SUBMITTED→APPROVED→COMPLETED, REJECTED→IN_PROGRESS
+- Delete only TODO or COMPLETED tasks
+- List my tasks
+- List submissions for task
+
+### Submissions
+- CRUD with org isolation
+- Submit work (status check: must be ACTIVE)
+- Approve/Reject with DB transaction (creates payroll record on approve)
+- Status flow: PENDING→APPROVED|REJECTED
+
+### Payroll
+- Generate from approved submissions (single or batch)
+- DRAFT (manual) + GENERATED (auto) status flow
+- APPROVE/REJECT endpoints
+- Decimal formatting for API responses
+
+### Payments
+- Stripe checkout session creation
+- Webhook handling (checkout.session.completed → PAID)
+- List payments, get my payments, get by ID
+
+### Analytics
+- Role-based dashboard (Admin/HR sees org stats, Employee sees personal stats)
+- Employee analytics, project analytics, payroll analytics, payment analytics
+
+### Audit Logs
+- Automatic logging on all key actions (28 action types)
+- Fire-and-forget utility (never blocks main transaction)
+- Filterable by user, action, entity, date range
+
+### Security
+- Rate limiting (100 req/15 min general, 20 req/15 min auth)
+- Helmet security headers
+- JWT authentication on all protected routes
+- Org isolation on all queries
 
 ---
 
 ## Optional (If Time Permits)
-
 - [ ] Multi-organization support (Membership model — user can belong to multiple orgs)
 - [ ] Multi-employee per task assignment (currently: one employee per task)
 - [ ] bkash / SSLCOMMERZ payment gateway integration
 - [ ] AI-powered payroll generation (auto-calculate from approved submissions)
 - [ ] PDF generation for payslips
+- [ ] Postman collection
 
 ---
 
@@ -222,3 +303,9 @@ This file is excluded from git commits and serves as a shared checklist to track
 2. **Prisma Client**: Generated at `generated/prisma` to avoid polluting default imports.
 3. **Response Format**: `{ success, statusCode, message, data, meta }`
 4. **Each Module**: Has `*.controller.ts`, `*.service.ts`, `*.route.ts`, `*.validation.ts`, `*.interface.ts`
+5. **Git Commits**: Created manually by user, agent only makes file changes
+6. **IDs**: Use `@default(uuid())` not cuid
+7. **Seed**: Runs once (checks count > 0 to skip)
+8. **Validation Errors**: Comma-joined message string for UI toast + structured data array for field-level display
+9. **Decimal Fields**: Prisma Decimal → `toNumber()` before API response
+10. **Employee Status**: Shared utility in `employeeStatus.ts` enforced across task & submission services

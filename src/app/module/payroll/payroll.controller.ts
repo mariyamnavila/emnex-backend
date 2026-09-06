@@ -90,18 +90,6 @@ const rejectPayroll = catchAsync(async (req: Request, res: Response) => {
 	});
 });
 
-const getPayrollSummary = catchAsync(async (req: Request, res: Response) => {
-	const user = req.user as IRequestUser;
-	const result = await PayrollService.getPayrollSummary(user);
-
-	sendResponse(res, {
-		statusCode: httpStatus.OK,
-		success: true,
-		message: "Payroll summary fetched successfully",
-		data: result,
-	});
-});
-
 export const PayrollController = {
 	generatePayroll,
 	getAllPayrolls,
@@ -109,5 +97,4 @@ export const PayrollController = {
 	getMyPayrolls,
 	approvePayroll,
 	rejectPayroll,
-	getPayrollSummary,
 };

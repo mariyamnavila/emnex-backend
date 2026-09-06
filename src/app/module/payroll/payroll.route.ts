@@ -8,8 +8,6 @@ const router = Router();
 
 router.get("/my", auth(), PayrollController.getMyPayrolls);
 
-router.get("/summary", auth("ADMIN", "HR_MANAGER", "FINANCE_MANAGER"), PayrollController.getPayrollSummary);
-
 router.post(
 	"/generate",
 	auth("ADMIN", "HR_MANAGER", "FINANCE_MANAGER"),

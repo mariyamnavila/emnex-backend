@@ -317,40 +317,6 @@ const rejectPayroll = async (
 	return formatPayroll(updatedPayroll);
 };
 
-const getPayrollSummary = async (user: IRequestUser) => {
-	const summary = await prisma.payroll.aggregate({
-		where: { organizationId: user.organizationId },
-		_sum: {
-			grossAmount: true,
-			deductions: true,
-			netAmount: true,
-		},
-		_count: true,
-	});
-
-	const statusCounts = await prisma.payroll.groupBy({
-		by: ["status"],
-		where: { organizationId: user.organizationId },
-		_count: true,
-		_sum: {
-			grossAmount: true,
-			netAmount: true,
-		},
-	});
-
-	return {
-		totalPayrolls: summary._count,
-		totalGross: toNumber(summary._sum.grossAmount),
-		totalDeductions: toNumber(summary._sum.deductions),
-		totalNet: toNumber(summary._sum.netAmount),
-		byStatus: statusCounts.map((s) => ({
-			...s,
-			totalGross: toNumber(s._sum.grossAmount),
-			totalNet: toNumber(s._sum.netAmount),
-		})),
-	};
-};
-
 export const PayrollService = {
 	generatePayroll,
 	getAllPayrolls,
@@ -358,5 +324,4 @@ export const PayrollService = {
 	getMyPayrolls,
 	approvePayroll,
 	rejectPayroll,
-	getPayrollSummary,
 };
