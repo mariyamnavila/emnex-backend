@@ -4,6 +4,63 @@ This file is excluded from git commits and serves as a shared checklist to track
 
 ---
 
+## Assignment Requirements Checklist
+
+### 1. API Design & Documentation (15%)
+- [x] RESTful design with proper endpoint structure
+- [x] API versioning (`/api/v1/...`)
+- [x] Consistent response format (`{ success, statusCode, message, data, meta }`)
+- [ ] Postman/Swagger documentation **[TODO]**
+
+### 2. Database Design & Schema (15%)
+- [x] Prisma schema with multi-file structure
+- [x] Relationships with proper constraints
+- [x] Migrations applied
+- [x] Seed data (38 permissions, 4 system roles)
+
+### 3. Authentication & Authorization (15%)
+- [x] Email/Password authentication
+- [x] Google OAuth (GCP) integration
+- [x] 3+ roles (ADMIN, HR_MANAGER, FINANCE_MANAGER, EMPLOYEE)
+- [x] JWT/session handling with refresh tokens
+- [x] Protected routes with role-based middleware
+
+### 4. Core Functionality & Business Logic (20%)
+- [x] CRUD operations for all modules
+- [x] Workflows (task status transitions, submission approval)
+- [x] Status management (employee status, task status, payroll status)
+- [x] Role-based operations
+
+### 5. Error Handling & Validation (10%)
+- [x] Zod validation on all inputs
+- [x] Structured error messages
+- [x] 404 handling
+- [x] Edge case handling
+
+### 6. Payment Integration (10%)
+- [x] Stripe integration with checkout sessions
+- [x] Webhook handling for payment status
+- [x] Payment flow and status tracking
+
+### 7. Performance & Code Quality (5%)
+- [x] Database indexing on foreign keys
+- [x] Redis caching setup
+- [x] Modular architecture
+- [x] Clean code with consistent style
+
+### 8. Deployment (5%)
+- [ ] Working production API **[TODO]**
+- [ ] Environment configuration **[TODO]**
+- [ ] DB connection **[TODO]**
+
+### 9. Commit History (2%)
+- [x] 24 meaningful commits (exceeds 20 minimum)
+
+### 10. Video Explanation (3%)
+- [ ] 5-10 minute API walkthrough **[TODO]**
+
+---
+
 ## Project Phases
 
 ### Phase 1: Database & Foundation
@@ -140,7 +197,6 @@ This file is excluded from git commits and serves as a shared checklist to track
 - [x] Implement get my payroll (`GET /api/v1/payroll/my`)
 - [x] Implement approve payroll (`POST /api/v1/payroll/:id/approve`)
 - [x] Implement reject payroll (`POST /api/v1/payroll/:id/reject`)
-- [ ] ~~Implement payroll summary (`GET /api/v1/payroll/summary`)~~ **Removed: duplicate of analytics/payroll**
 
 ---
 
@@ -172,8 +228,20 @@ This file is excluded from git commits and serves as a shared checklist to track
 - [x] Add helmet security headers
 - [x] Verify all routes have auth + permission middleware
 - [x] Verify org isolation on all queries
-- [ ] ~~Postman collection~~ **To do**
-- [ ] ~~Verify soft deletes on all major models~~ **Skipped (hard delete)**
+- [x] Implement soft deletes on major models (Role, Department, Project, Task)
+- [ ] Postman collection **[TODO]**
+
+---
+
+### Phase 15: Soft Delete Implementation
+- [x] Add `deletedAt DateTime?` to `role.prisma`
+- [x] Add `deletedAt DateTime?` to `department.prisma`
+- [x] Update `role.service.ts` to use soft delete
+- [x] Update `department.service.ts` to use soft delete
+- [x] Update `project.service.ts` to use soft delete
+- [x] Update `task.service.ts` to use soft delete
+- [x] Add `deletedAt: null` filter to all queries
+- [x] Run prisma migration
 
 ---
 
@@ -205,12 +273,40 @@ This file is excluded from git commits and serves as a shared checklist to track
 | 22 | Audit Log module with full logging | ✅ |
 | 23 | Fix duplicate endpoints & routing bugs | ✅ |
 | 24 | Security hardening — Rate limiting & Helmet | ✅ |
+| 25 | Soft delete implementation | ✅ |
+
+---
+
+## Summary: Completed vs Remaining
+
+### ✅ Completed (90%)
+| Category | Status |
+|----------|--------|
+| API Design & Documentation | ✅ (except Postman) |
+| Database Design & Schema | ✅ |
+| Authentication & Authorization | ✅ |
+| Core Functionality & Business Logic | ✅ |
+| Error Handling & Validation | ✅ |
+| Payment Integration | ✅ |
+| Performance & Code Quality | ✅ |
+| Commit History | ✅ (25 commits) |
+| Soft Delete Implementation | ✅ |
+| Security (Rate Limiting, Helmet) | ✅ |
+
+### ❌ Remaining (10%)
+| Task | Priority | Notes |
+|------|----------|-------|
+| Deployment (Vercel/Render) | HIGH | Need to deploy to production |
+| Postman Collection | HIGH | Document all 76 endpoints |
+| Video Explanation | HIGH | 5-10 minute API walkthrough |
+| Environment Configuration | MEDIUM | Set up production env vars |
+| DB Connection (Production) | MEDIUM | Configure production database |
 
 ---
 
 ## Implemented Features
 
-### Auth
+### Auth (8 endpoints)
 - Register (creates company + admin user)
 - Login (email + password)
 - Google OAuth (auto-links by email)
@@ -220,33 +316,33 @@ This file is excluded from git commits and serves as a shared checklist to track
 - Change password (with mustChangePassword flag)
 - Upload avatar (Cloudinary)
 
-### Organization
+### Organization (4 endpoints)
 - Get my organization
 - Get organization by ID
 - Update organization
 - Organization stats
 
-### Roles & Permissions
+### Roles & Permissions (9 endpoints)
 - CRUD for roles (system roles are templates, copied on org creation)
 - 38 permissions across all modules
 - Assign/remove permissions to roles
 
-### Departments
+### Departments (6 endpoints)
 - CRUD with org isolation
 - List employees in department
 
-### Employees
+### Employees (7 endpoints)
 - CRUD with org isolation
 - Employee status management (ACTIVE, INACTIVE, SUSPENDED, TERMINATED)
 - Resend credentials
 - Employee stats
 
-### Projects
+### Projects (7 endpoints)
 - CRUD with org isolation
 - Project stats
 - List tasks in project
 
-### Tasks
+### Tasks (9 endpoints)
 - CRUD with org isolation
 - Assign to single employee (status check: can't assign to SUSPENDED/TERMINATED)
 - Status transitions: TODO→IN_PROGRESS→SUBMITTED→APPROVED→COMPLETED, REJECTED→IN_PROGRESS
@@ -254,28 +350,28 @@ This file is excluded from git commits and serves as a shared checklist to track
 - List my tasks
 - List submissions for task
 
-### Submissions
+### Submissions (7 endpoints)
 - CRUD with org isolation
 - Submit work (status check: must be ACTIVE)
 - Approve/Reject with DB transaction (creates payroll record on approve)
 - Status flow: PENDING→APPROVED|REJECTED
 
-### Payroll
+### Payroll (6 endpoints)
 - Generate from approved submissions (single or batch)
 - DRAFT (manual) + GENERATED (auto) status flow
 - APPROVE/REJECT endpoints
 - Decimal formatting for API responses
 
-### Payments
+### Payments (5 endpoints)
 - Stripe checkout session creation
 - Webhook handling (checkout.session.completed → PAID)
 - List payments, get my payments, get by ID
 
-### Analytics
+### Analytics (5 endpoints)
 - Role-based dashboard (Admin/HR sees org stats, Employee sees personal stats)
 - Employee analytics, project analytics, payroll analytics, payment analytics
 
-### Audit Logs
+### Audit Logs (2 endpoints)
 - Automatic logging on all key actions (28 action types)
 - Fire-and-forget utility (never blocks main transaction)
 - Filterable by user, action, entity, date range
@@ -285,16 +381,7 @@ This file is excluded from git commits and serves as a shared checklist to track
 - Helmet security headers
 - JWT authentication on all protected routes
 - Org isolation on all queries
-
----
-
-## Optional (If Time Permits)
-- [ ] Multi-organization support (Membership model — user can belong to multiple orgs)
-- [ ] Multi-employee per task assignment (currently: one employee per task)
-- [ ] bkash / SSLCOMMERZ payment gateway integration
-- [ ] AI-powered payroll generation (auto-calculate from approved submissions)
-- [ ] PDF generation for payslips
-- [ ] Postman collection
+- Soft deletes on Role, Department, Project, Task
 
 ---
 
@@ -309,3 +396,4 @@ This file is excluded from git commits and serves as a shared checklist to track
 8. **Validation Errors**: Comma-joined message string for UI toast + structured data array for field-level display
 9. **Decimal Fields**: Prisma Decimal → `toNumber()` before API response
 10. **Employee Status**: Shared utility in `employeeStatus.ts` enforced across task & submission services
+11. **Soft Delete**: Use `deletedAt` timestamp instead of hard delete for Role, Department, Project, Task

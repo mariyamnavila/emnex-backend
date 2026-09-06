@@ -28,6 +28,7 @@ const createTask = async (payload: ITaskCreatePayload, user: IRequestUser) => {
 		where: {
 			id: projectId,
 			organizationId: user.organizationId,
+			deletedAt: null,
 		},
 	});
 
@@ -99,6 +100,7 @@ const getAllTasks = async (user: IRequestUser, query: ITaskQueryParams) => {
 
 	const where: Record<string, unknown> = {
 		project: { organizationId: user.organizationId },
+		deletedAt: null,
 	};
 
 	if (search) {
@@ -204,6 +206,10 @@ const updateTask = async (
 		throw new AppError(httpStatus.NOT_FOUND, "Task not found");
 	}
 
+	if (task.deletedAt) {
+		throw new AppError(httpStatus.BAD_REQUEST, "Cannot modify deleted task");
+	}
+
 	if (task.project.organizationId !== user.organizationId) {
 		throw new AppError(
 			httpStatus.FORBIDDEN,
@@ -263,7 +269,10 @@ const deleteTask = async (id: string, user: IRequestUser) => {
 		);
 	}
 
-	await prisma.task.delete({ where: { id } });
+	await prisma.task.update({
+		where: { id },
+		data: { deletedAt: new Date() },
+	});
 
 	createAuditLog({
 		user,
@@ -288,6 +297,13 @@ const assignTask = async (
 
 	if (!task) {
 		throw new AppError(httpStatus.NOT_FOUND, "Task not found");
+	}
+
+	if (task.deletedAt) {
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			"Cannot assign deleted task",
+		);
 	}
 
 	if (task.project.organizationId !== user.organizationId) {
@@ -363,6 +379,13 @@ const updateTaskStatus = async (
 		throw new AppError(httpStatus.NOT_FOUND, "Task not found");
 	}
 
+	if (task.deletedAt) {
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			"Cannot update status of deleted task",
+		);
+	}
+
 	if (task.project.organizationId !== user.organizationId) {
 		throw new AppError(
 			httpStatus.FORBIDDEN,
@@ -419,7 +442,7 @@ const getMyTasks = async (user: IRequestUser) => {
 	validateEmployeeCanViewTasks(employee.status);
 
 	const tasks = await prisma.task.findMany({
-		where: { employeeId: employee.id },
+		where: { employeeId: employee.id, deletedAt: null },
 		include: {
 			project: true,
 			_count: {
@@ -440,6 +463,13 @@ const getTaskSubmissions = async (id: string, user: IRequestUser) => {
 
 	if (!task) {
 		throw new AppError(httpStatus.NOT_FOUND, "Task not found");
+	}
+
+	if (task.deletedAt) {
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			"Cannot view submissions for deleted task",
+		);
 	}
 
 	if (task.project.organizationId !== user.organizationId) {

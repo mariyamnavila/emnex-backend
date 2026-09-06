@@ -45,6 +45,7 @@ const getAllProjects = async (
 
 	const where: Record<string, unknown> = {
 		organizationId: user.organizationId,
+		deletedAt: null,
 	};
 
 	if (search) {
@@ -135,6 +136,13 @@ const updateProject = async (
 		throw new AppError(httpStatus.NOT_FOUND, "Project not found");
 	}
 
+	if (project.deletedAt) {
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			"Cannot modify deleted project",
+		);
+	}
+
 	if (project.organizationId !== user.organizationId) {
 		throw new AppError(
 			httpStatus.FORBIDDEN,
@@ -193,7 +201,10 @@ const deleteProject = async (id: string, user: IRequestUser) => {
 		);
 	}
 
-	await prisma.project.delete({ where: { id } });
+	await prisma.project.update({
+		where: { id },
+		data: { deletedAt: new Date() },
+	});
 
 	createAuditLog({
 		user,
@@ -214,6 +225,13 @@ const getProjectTasks = async (id: string, user: IRequestUser) => {
 		throw new AppError(httpStatus.NOT_FOUND, "Project not found");
 	}
 
+	if (project.deletedAt) {
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			"Cannot view tasks for deleted project",
+		);
+	}
+
 	if (project.organizationId !== user.organizationId) {
 		throw new AppError(
 			httpStatus.FORBIDDEN,
@@ -222,7 +240,7 @@ const getProjectTasks = async (id: string, user: IRequestUser) => {
 	}
 
 	const tasks = await prisma.task.findMany({
-		where: { projectId: id },
+		where: { projectId: id, deletedAt: null },
 		include: {
 			employee: {
 				include: {
@@ -245,6 +263,13 @@ const getProjectStats = async (id: string, user: IRequestUser) => {
 		throw new AppError(httpStatus.NOT_FOUND, "Project not found");
 	}
 
+	if (project.deletedAt) {
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			"Cannot view stats for deleted project",
+		);
+	}
+
 	if (project.organizationId !== user.organizationId) {
 		throw new AppError(
 			httpStatus.FORBIDDEN,
@@ -260,15 +285,24 @@ const getProjectStats = async (id: string, user: IRequestUser) => {
 		totalSubmissions,
 		approvedSubmissions,
 	] = await Promise.all([
-		prisma.task.count({ where: { projectId: id } }),
-		prisma.task.count({ where: { projectId: id, status: "TODO" } }),
-		prisma.task.count({ where: { projectId: id, status: "IN_PROGRESS" } }),
-		prisma.task.count({ where: { projectId: id, status: "COMPLETED" } }),
-		prisma.workSubmission.count({
-			where: { task: { projectId: id } },
+		prisma.task.count({ where: { projectId: id, deletedAt: null } }),
+		prisma.task.count({
+			where: { projectId: id, status: "TODO", deletedAt: null },
+		}),
+		prisma.task.count({
+			where: { projectId: id, status: "IN_PROGRESS", deletedAt: null },
+		}),
+		prisma.task.count({
+			where: { projectId: id, status: "COMPLETED", deletedAt: null },
 		}),
 		prisma.workSubmission.count({
-			where: { task: { projectId: id }, status: "APPROVED" },
+			where: { task: { projectId: id, deletedAt: null } },
+		}),
+		prisma.workSubmission.count({
+			where: {
+				task: { projectId: id, deletedAt: null },
+				status: "APPROVED",
+			},
 		}),
 	]);
 

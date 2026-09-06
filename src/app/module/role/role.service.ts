@@ -16,6 +16,7 @@ const createRole = async (payload: IRoleCreatePayload, user: IRequestUser) => {
 		where: {
 			name: name,
 			organizationId: user.organizationId,
+			deletedAt: null,
 		},
 	});
 
@@ -49,6 +50,7 @@ const getAllRoles = async (user: IRequestUser) => {
 	const roles = await prisma.role.findMany({
 		where: {
 			organizationId: user.organizationId,
+			deletedAt: null,
 		},
 		include: {
 			_count: {
@@ -110,6 +112,10 @@ const updateRole = async (
 		throw new AppError(httpStatus.NOT_FOUND, "Role not found");
 	}
 
+	if (role.deletedAt) {
+		throw new AppError(httpStatus.BAD_REQUEST, "Cannot modify deleted role");
+	}
+
 	if (role.organizationId !== user.organizationId) {
 		throw new AppError(
 			httpStatus.FORBIDDEN,
@@ -127,6 +133,7 @@ const updateRole = async (
 			where: {
 				name,
 				organizationId: user.organizationId,
+				deletedAt: null,
 			},
 		});
 
@@ -186,7 +193,10 @@ const deleteRole = async (id: string, user: IRequestUser) => {
 		);
 	}
 
-	await prisma.role.delete({ where: { id } });
+	await prisma.role.update({
+		where: { id },
+		data: { deletedAt: new Date() },
+	});
 
 	createAuditLog({
 		user,

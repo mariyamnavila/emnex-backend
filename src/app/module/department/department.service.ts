@@ -19,6 +19,7 @@ const createDepartment = async (
 		where: {
 			name,
 			organizationId: user.organizationId,
+			deletedAt: null,
 		},
 	});
 
@@ -52,6 +53,7 @@ const getAllDepartments = async (user: IRequestUser) => {
 	const departments = await prisma.department.findMany({
 		where: {
 			organizationId: user.organizationId,
+			deletedAt: null,
 		},
 		include: {
 			_count: {
@@ -114,6 +116,13 @@ const updateDepartment = async (
 		throw new AppError(httpStatus.NOT_FOUND, "Department not found");
 	}
 
+	if (department.deletedAt) {
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			"Cannot modify deleted department",
+		);
+	}
+
 	if (department.organizationId !== user.organizationId) {
 		throw new AppError(
 			httpStatus.FORBIDDEN,
@@ -127,6 +136,7 @@ const updateDepartment = async (
 			where: {
 				name,
 				organizationId: user.organizationId,
+				deletedAt: null,
 			},
 		});
 
@@ -182,7 +192,10 @@ const deleteDepartment = async (id: string, user: IRequestUser) => {
 		);
 	}
 
-	await prisma.department.delete({ where: { id } });
+	await prisma.department.update({
+		where: { id },
+		data: { deletedAt: new Date() },
+	});
 
 	createAuditLog({
 		user,
@@ -201,6 +214,13 @@ const getDepartmentEmployees = async (id: string, user: IRequestUser) => {
 
 	if (!department) {
 		throw new AppError(httpStatus.NOT_FOUND, "Department not found");
+	}
+
+	if (department.deletedAt) {
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			"Cannot view employees in deleted department",
+		);
 	}
 
 	if (department.organizationId !== user.organizationId) {
