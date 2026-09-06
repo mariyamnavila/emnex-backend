@@ -1,254 +1,259 @@
-# Architecture
+<div align="center">
 
-## Project Structure
+# 🏛️ System Architecture Guide
 
-```
+### *Modular Architecture, Middleware Pipeline & Design Patterns in EmNex*
+
+[![Architecture](https://img.shields.io/badge/Architecture-Modular-blueviolet?style=for-the-badge&logo=diagramsdotnet&logoColor=white)](#-module-pattern)
+[![Express](https://img.shields.io/badge/Express-5.x-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com)
+[![Prisma](https://img.shields.io/badge/Prisma-7.x-2D3748?style=for-the-badge&logo=prisma&logoColor=white)](https://www.prisma.io)
+
+</div>
+
+---
+
+## 📌 Navigation
+
+- [Project Folder Layout](#-project-folder-layout)
+- [Module Pattern (5-File Architecture)](#-module-pattern-5-file-architecture)
+- [Request & Response Pipeline](#-request--response-pipeline)
+- [Middleware Architecture](#-middleware-architecture)
+- [Standardized API Responses](#-standardized-api-responses)
+- [Global Error Handling](#-global-error-handling)
+- [Fire-and-Forget Audit Logging](#-fire-and-forget-audit-logging)
+
+---
+
+## 📁 Project Folder Layout
+
+```ascii
 EmNex-Backend/
 ├── prisma/
-│   ├── migrations/              # Database migrations
-│   └── schema/                  # Multi-file Prisma schema
-│       ├── schema.prisma        # Base (generator + datasource)
-│       ├── enums.prisma         # All enums
-│       ├── organization.prisma  # Organization model
-│       ├── user.prisma          # User model
-│       ├── role.prisma          # Role model
-│       ├── permission.prisma    # Permission model
-│       ├── role-permission.prisma # RolePermission junction
-│       ├── department.prisma    # Department model
-│       ├── employee.prisma      # Employee model
-│       ├── project.prisma       # Project model
-│       ├── task.prisma          # Task model
-│       ├── work-submission.prisma # WorkSubmission model
-│       ├── payroll.prisma       # Payroll model
-│       ├── payment.prisma       # Payment model
-│       └── audit-log.prisma     # AuditLog model
+│   ├── migrations/              # Database schema migrations
+│   └── schema/                  # Multi-file Prisma schema structure
+│       ├── schema.prisma        # Datasource & generator config
+│       ├── enums.prisma         # All 11 PostgreSQL enums
+│       ├── organization.prisma  # Multi-tenant root entity
+│       ├── user.prisma          # Authentication & credentials
+│       ├── role.prisma          # Roles & system defaults
+│       ├── permission.prisma    # System permission catalog
+│       ├── role-permission.prisma # Junction join table
+│       ├── department.prisma    # Department organizational structure
+│       ├── employee.prisma      # Employee profiles & salary types
+│       ├── project.prisma       # Project tracking & budgets
+│       ├── task.prisma          # Task assignments & priority
+│       ├── work-submission.prisma # Hours logging & approval
+│       ├── payroll.prisma       # Payroll calculations & status
+│       ├── payment.prisma       # Stripe payment transactions
+│       └── audit-log.prisma     # System audit trail logs
 ├── src/
 │   ├── app/
-│   │   ├── config/
-│   │   │   └── index.ts         # Environment variables
-│   │   ├── interfaces/
-│   │   │   └── index.ts         # IRequestUser + Express augmentation
-│   │   ├── lib/
-│   │   │   ├── prisma.ts        # Prisma client singleton
-│   │   │   ├── stripe.ts        # Stripe instance
-│   │   │   ├── cloudinary.ts    # Cloudinary config
-│   │   │   ├── multer.ts        # File upload config
-│   │   │   ├── nodemailer.ts    # Email transporter
-│   │   │   ├── email.ts         # Email sending functions
-│   │   │   └── googleAuth.ts    # Google OAuth client
-│   │   ├── middleware/
-│   │   │   ├── checkAuth.ts     # JWT authentication
-│   │   │   ├── checkPermission.ts # RBAC authorization
-│   │   │   ├── validateRequest.ts # Zod validation
-│   │   │   ├── globalErrorHandler.ts # Error handler
-│   │   │   └── notFound.ts      # 404 handler
-│   │   ├── module/              # Feature modules
-│   │   │   ├── auth/            # Authentication
-│   │   │   ├── organization/    # Organization management
-│   │   │   ├── role/            # Role management
-│   │   │   ├── department/      # Department management
-│   │   │   ├── employee/        # Employee management
-│   │   │   ├── project/         # Project management
-│   │   │   ├── task/            # Task management
-│   │   │   ├── submission/      # Work submissions
-│   │   │   ├── payroll/         # Payroll generation
-│   │   │   ├── payment/         # Stripe payments
-│   │   │   ├── analytics/       # Dashboard analytics
-│   │   │   └── audit-log/       # Audit logging
-│   │   └── templates/
-│   │       └── employee-welcome-email.ejs
-│   ├── app.ts                   # Express app setup
-│   └── server.ts                # Server entry point
-├── package.json
-├── tsconfig.json
-├── biome.json
-├── README.md
-├── ARCHITECTURE.md
-├── DATABASE.md
-├── API_INTEGRATION.md
-├── todo.md
-├── workflow.md
-└── assignment.md
-```
-
-## Module Pattern
-
-Each feature module follows a consistent 5-file pattern:
-
-```
-module/
-└── feature/
-    ├── feature.controller.ts    # Request handling
-    ├── feature.service.ts       # Business logic
-    ├── feature.route.ts         # Route definitions
-    ├── feature.validation.ts    # Zod schemas
-    └── feature.interface.ts     # TypeScript types
-```
-
-### Flow
-
-```
-Request → Route → Middleware(auth, permission, validation) → Controller → Service → Prisma → Response
-```
-
-### Controller Responsibilities
-- Extract user from `req.user`
-- Extract params/body/query from request
-- Call service function
-- Send standardized response via `sendResponse()`
-
-### Service Responsibilities
-- Business logic and data operations
-- Input validation beyond schema (ownership, status checks)
-- Audit logging via `createAuditLog()`
-- Throwing `AppError` on business rule violations
-
----
-
-## Middleware
-
-### Global Middleware (applied in `app.ts`)
-
-| Middleware | Purpose |
-|-----------|---------|
-| `helmet()` | Security headers |
-| `rateLimit()` | 100 req/15min per IP |
-| `cors()` | Cross-origin requests |
-| `express.json()` | JSON body parsing |
-| `cookieParser()` | Cookie parsing |
-
-### Route-Level Middleware
-
-| Middleware | Purpose |
-|-----------|---------|
-| `auth()` | JWT verification, user loading, status checks |
-| `checkPermission(...perms)` | RBAC permission check |
-| `validateRequest(schema)` | Zod input validation |
-
-### Authentication Flow (`auth()`)
-
-```
-1. Extract token from cookie or Authorization header
-2. Verify JWT signature
-3. Check if token is blacklisted (if Redis enabled)
-4. Fetch user from DB with role + permissions
-5. Check user status (BLOCKED, DELETED)
-6. Check employee status (TERMINATED)
-7. Attach req.user = { userId, email, name, role, organizationId, permissions }
-8. Call next()
-```
-
-### Authorization Flow (`checkPermission()`)
-
-```
-1. Read req.user.permissions (loaded by auth())
-2. Check if all required permissions exist in user's permissions
-3. If missing any → throw 403 with missing permission names
-4. If all present → call next()
+│   │   ├── config/              # Centralized env variable loader
+│   │   ├── interfaces/          # TypeScript Express augmentation & types
+│   │   ├── lib/                 # Third-party singletons (Prisma, Stripe, Cloudinary, etc.)
+│   │   ├── middleware/          # Auth, Permission, Validation, Error handlers
+│   │   ├── module/              # Feature modules (12 subdirectories)
+│   │   └── templates/           # EJS HTML Email templates
+│   ├── app.ts                   # Express application setup & middleware mounting
+│   └── server.ts                # HTTP Server entry point & auto-seeder
+└── package.json
 ```
 
 ---
 
-## Utilities
+## 🧩 Module Pattern (5-File Architecture)
 
-| Utility | Purpose |
-|---------|---------|
-| `catchAsync(fn)` | Wraps async route handlers, catches errors → `next(error)` |
-| `AppError(statusCode, message)` | Custom error class with HTTP status code |
-| `sendResponse(res, { statusCode, success, message, data, meta })` | Standardized JSON response |
-| `jwtUtils.createToken()` / `verifyToken()` | JWT sign/verify operations |
-| `createAuditLog(data)` | Creates audit log record (fire-and-forget) |
-| `seed()` | Seeds permissions + system roles on first run |
+Every feature inside `src/app/module/` strictly adheres to a clean, decoupled **5-File Architecture Pattern**:
+
+```ascii
+src/app/module/<feature>/
+├── <feature>.route.ts         # Route declarations & middleware mounting
+├── <feature>.controller.ts    # Request parsing & HTTP response formatting
+├── <feature>.service.ts       # Business logic, Prisma queries & Audit logs
+├── <feature>.validation.ts    # Zod schemas for request validation
+└── <feature>.interface.ts     # TypeScript interfaces & DTO types
+```
+
+### Layer Responsibilities
+
+```mermaid
+graph LR
+    Req[📥 Client Request] --> Route[🛣️ Route Layer]
+    Route --> Val[🛡️ Validation Middleware]
+    Val --> Ctrl[🎮 Controller Layer]
+    Ctrl --> Svc[💼 Service Layer]
+    Svc --> DB[(🐘 Database / Prisma)]
+    Svc --> Res[📤 Standardized Response]
+```
+
+| Layer | Primary Duty | Rules & Constraints |
+| :--- | :--- | :--- |
+| **Route** | Route endpoint definition & middleware attachment | Never contains inline logic. Only maps routes to controllers. |
+| **Controller** | Extracts `req.user`, `req.params`, `req.body`, `req.query` | Uses `catchAsync()`. Delegates all business logic to Services. |
+| **Service** | Core business calculations, DB queries, Audit logs | Throws `AppError` on violations. Never touches HTTP objects (`req`/`res`). |
+| **Validation** | Zod input schema definition | Validates request payloads before reaching controllers. |
+| **Interface** | TypeScript types & DTO definitions | Ensures static type safety across services and controllers. |
 
 ---
 
-## Response Format
+## 🔄 Request & Response Pipeline
 
-### Success
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Client as 📱 Client App
+    participant Middleware as 🛡️ Express Middleware
+    participant Controller as 🎮 Controller
+    participant Service as 💼 Service
+    participant Database as 🐘 Prisma DB
+
+    Client->>Middleware: HTTP Request + Bearer / Cookie Token
+    Note over Middleware: 1. Rate Limit & Security Check<br/>2. Verify JWT Token (auth)<br/>3. Check RBAC Permissions (checkPermission)<br/>4. Validate Body against Zod Schema (validateRequest)
+    alt Verification Fails
+        Middleware-->>Client: 401 / 403 / 400 Error Response
+    else Verification Succeeds
+        Middleware->>Controller: Forward to Controller
+        Controller->>Service: Call Service Method(payload, user)
+        Service->>Database: Execute Prisma Transaction / Query
+        Database-->>Service: Return DB Result
+        Service-->>Controller: Return Business Data DTO
+        Controller-->>Client: 200 OK + Standardized JSON Response
+    end
+```
+
+---
+
+## 🛡️ Middleware Architecture
+
+### 1. Global Middleware (`app.ts`)
+
+- `helmet()` — Protects against common web vulnerabilities (XSS, Clickjacking, MIME sniffing).
+- `cors()` — Configures strict Cross-Origin Resource Sharing based on `FRONTEND_URL`.
+- `express.json()` & `cookieParser()` — Parses JSON request bodies and HTTP cookies.
+
+---
+
+### 2. Route-Level Middleware Pipeline
+
+```ascii
+[ Request ] ──► auth() ──► checkPermission() ──► validateRequest() ──► Controller
+```
+
+> [!NOTE]
+> **Authentication Middleware (`auth()`)**:
+> 1. Extracts token from `Authorization` header (`Bearer <token>`) or `accessToken` cookie.
+> 2. Decodes JWT payload and checks `tokenVersion` (invalidates old tokens on password changes).
+> 3. Fetches fresh User record along with their active Role and Permissions.
+> 4. Verifies User status (`BLOCKED`, `DELETED`) and Employee status (`TERMINATED`).
+> 5. Attaches `IRequestUser` object to `req.user`.
+
+> [!IMPORTANT]
+> **Authorization Middleware (`checkPermission(...requiredPermissions)`)**:
+> 1. Reads `req.user.permissions`.
+> 2. Verifies that user possesses **ALL** required permissions.
+> 3. Throws `403 Forbidden` if any permission is missing.
+
+---
+
+## 📤 Standardized API Responses
+
+All API responses follow a uniform JSON structure:
+
+### 1. Single Entity / General Response
 
 ```json
 {
   "success": true,
   "statusCode": 200,
-  "message": "Resource fetched successfully",
-  "data": { ... }
+  "message": "Employee details fetched successfully",
+  "data": {
+    "id": "e5b8398b-7002-4648-8df0-101150cbbd1a",
+    "employeeCode": "EMP-001",
+    "jobTitle": "Lead Developer",
+    "salaryType": "MONTHLY",
+    "status": "ACTIVE"
+  }
 }
 ```
 
-### Success with Pagination
+### 2. Paginated Data Response
 
 ```json
 {
   "success": true,
   "statusCode": 200,
-  "message": "Resources fetched successfully",
+  "message": "Employees fetched successfully",
   "data": [ ... ],
   "meta": {
     "page": 1,
     "limit": 10,
-    "total": 50,
+    "total": 45,
     "totalPages": 5
   }
 }
 ```
 
-### Error
+---
+
+## 🚨 Global Error Handling
+
+Errors thrown anywhere in the application pass through `catchAsync()` to `globalErrorHandler`.
+
+```mermaid
+graph TD
+    Err[💥 Runtime Error / Exception] --> Catch[catchAsync Utility]
+    Catch --> GlobalErr[🛡️ globalErrorHandler]
+    
+    GlobalErr --> Check1{Error Type?}
+    Check1 -->|AppError| Custom[Custom Status & Message]
+    Check1 -->|ZodError| ZodFormat[400 Validation Error Details]
+    Check1 -->|Prisma P2002| UniqueErr[400 Duplicate Unique Field]
+    Check1 -->|Prisma P2025| NotFoundErr[404 Record Not Found]
+    Check1 -->|Generic Error| ServerErr[500 Internal Server Error]
+    
+    Custom --> ClientResponse[📤 JSON Error Response]
+    ZodFormat --> ClientResponse
+    UniqueErr --> ClientResponse
+    NotFoundErr --> ClientResponse
+    ServerErr --> ClientResponse
+```
+
+### Standard Error Payload
 
 ```json
 {
   "success": false,
   "statusCode": 400,
-  "message": "Validation failed",
+  "message": "Validation Error",
   "errorDetails": [
-    { "field": "email", "message": "Invalid email" }
+    {
+      "field": "email",
+      "message": "Invalid email format"
+    }
   ]
 }
 ```
 
 ---
 
-## Error Handling
+## 📜 Fire-and-Forget Audit Logging
 
-The `globalErrorHandler` middleware handles:
-
-| Error Type | HTTP Status |
-|-----------|-------------|
-| `AppError` | Uses error's `statusCode` |
-| `PrismaClientValidationError` | 400 |
-| Prisma `P2002` (Unique constraint) | 400 |
-| Prisma `P2003` (Foreign key) | 400 |
-| Prisma `P2025` (Record not found) | 400 |
-| Prisma `P1000` (Auth failed) | 401 |
-| Prisma `P1001` (DB unreachable) | 400 |
-| Generic `Error` | 500 |
-
----
-
-## Audit Logging
-
-Every significant action creates an audit log record:
+EmNex features an asynchronous **Audit Log Service**. Whenever a significant mutation occurs (e.g. creating employee, approving payroll, updating status), `createAuditLog()` is triggered in a non-blocking background task.
 
 ```typescript
 createAuditLog({
-  user: { userId, organizationId },
-  action: AuditAction.CREATE_EMPLOYEE,
-  entity: "Employee",
-  entityId: employee.id,
-  metadata: { name, email },
+  user: { userId: user.userId, organizationId: user.organizationId },
+  action: "APPROVE_PAYROLL",
+  entity: "Payroll",
+  entityId: payroll.id,
+  metadata: { grossAmount, netAmount },
   ipAddress: req.ip,
 });
 ```
 
-### 27 Audit Actions
+> [!TIP]
+> Audit failures do not interrupt business execution. The logger catches errors internally and prints debug messages to console without throwing exceptions to the user.
 
-| Category | Actions |
-|----------|---------|
-| Auth | `LOGIN`, `LOGIN_FAILED`, `GOOGLE_LOGIN`, `LOGOUT`, `PASSWORD_CHANGED` |
-| Employee | `CREATE_EMPLOYEE`, `UPDATE_EMPLOYEE`, `DELETE_EMPLOYEE`, `CHANGE_EMPLOYEE_ROLE`, `CHANGE_EMPLOYEE_STATUS` |
-| Department | `CREATE_DEPARTMENT`, `UPDATE_DEPARTMENT`, `DELETE_DEPARTMENT` |
-| Role | `CREATE_ROLE`, `UPDATE_ROLE`, `DELETE_ROLE`, `ASSIGN_PERMISSIONS` |
-| Project | `CREATE_PROJECT`, `UPDATE_PROJECT`, `DELETE_PROJECT`, `CHANGE_PROJECT_STATUS` |
-| Task | `CREATE_TASK`, `ASSIGN_TASK`, `CHANGE_TASK_STATUS`, `DELETE_TASK` |
-| Submission | `SUBMIT_WORK`, `APPROVE_WORK`, `REJECT_WORK` |
-| Payroll | `GENERATE_PAYROLL`, `APPROVE_PAYROLL`, `REJECT_PAYROLL` |
-| Payment | `PAYMENT_INITIATED`, `PAYMENT_COMPLETED`, `PAYMENT_FAILED` |
+---
+
+[⬅️ Return to README.md](./README.md)

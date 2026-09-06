@@ -1,297 +1,314 @@
-# EmNex Backend
+<div align="center">
 
-Workforce, Project & Payroll Management Platform API
+# ⚡ EmNex Backend
 
-## Table of Contents
+### *Enterprise Multi-Tenant Workforce, Project & Payroll Platform*
 
-- [Overview](#overview)
-- [Tech Stack](#tech-stack)
-- [Features](#features)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-  - [Environment Variables](#environment-variables)
-  - [Database Setup](#database-setup)
-  - [Running the Server](#running-the-server)
-- [Project Structure](#project-structure) → [ARCHITECTURE.md](./ARCHITECTURE.md)
-- [Database Schema](#database-schema) → [DATABASE.md](./DATABASE.md)
-- [API Reference](#api-reference) → [API_INTEGRATION.md](./API_INTEGRATION.md)
-- [Authentication & Authorization](#authentication--authorization)
-- [Roles & Permissions](#roles--permissions)
-- [Soft Delete Strategy](#soft-delete-strategy)
-- [Edge Case Protections](#edge-case-protections)
-- [Services Integration](#services-integration)
-- [Scripts](#scripts)
+[![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org)
+[![Express](https://img.shields.io/badge/Express-5.x-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Prisma](https://img.shields.io/badge/Prisma-7.x-2D3748?style=for-the-badge&logo=prisma&logoColor=white)](https://www.prisma.io)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org)
+[![Stripe](https://img.shields.io/badge/Stripe-API-635BFF?style=for-the-badge&logo=stripe&logoColor=white)](https://stripe.com)
+[![Deployment](https://img.shields.io/badge/Vercel-Deployed-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://emnex-api.vercel.app)
+
+**Base URL**: `https://emnex-api.vercel.app/api/v1`
+
+</div>
 
 ---
 
-## Overview
+## 📌 Table of Contents
 
-EmNex is a multi-tenant SaaS backend for managing employees, projects, tasks, work submissions, payroll, and payments. Each organization gets its own isolated data space with role-based access control.
+- [Overview](#-overview)
+- [System Architecture](#-system-architecture)
+- [Key Features](#-key-features)
+- [Tech Stack](#-tech-stack)
+- [Documentation Hub](#-documentation-hub)
+- [Getting Started](#-getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+  - [Environment Configuration](#environment-configuration)
+  - [Database Setup](#database-setup)
+  - [Running the Server](#running-the-server)
+- [Authentication & Security](#-authentication--security)
+- [Roles & Permissions (RBAC)](#-roles--permissions-rbac)
+- [Edge Case Protections](#-edge-case-protections)
+- [Integrations](#-integrations)
+- [NPM Command Reference](#-npm-command-reference)
 
-## Tech Stack
+---
 
-| Layer | Technology |
-|-------|-----------|
-| Runtime | Node.js |
-| Language | TypeScript |
-| Framework | Express 5 |
-| Database | PostgreSQL |
-| ORM | Prisma 7 (with `@prisma/adapter-pg`) |
-| Authentication | JWT (Access + Refresh tokens) |
-| Validation | Zod |
-| Payment | Stripe |
-| File Upload | Cloudinary + Multer |
-| Email | Nodemailer + EJS templates |
-| Security | Helmet, Rate Limiting, CORS |
-| Linting | Biome |
+## 🚀 Overview
 
-## Features
+**EmNex** is a robust, multi-tenant SaaS backend API engineered for modern enterprises. It provides end-to-end management for employee lifecycles, department hierarchies, projects, tasks, work hour submissions, automated payroll calculation, and Stripe checkout payments.
 
-- Multi-tenant organization isolation
-- JWT authentication with access/refresh tokens
-- Role-based access control (RBAC) with 42 granular permissions
-- Google OAuth login
-- Employee lifecycle management (hire → suspend → terminate)
-- Project & task management with assignment tracking
-- Work submission workflow (submit → approve/reject)
-- Automated payroll generation from approved submissions
-- Stripe payment integration with webhook handling
-- Comprehensive audit logging
-- Analytics dashboard endpoints
-- File upload (avatars) via Cloudinary
-- Email notifications (employee welcome emails)
-- Soft delete for data retention
-- Rate limiting (100 req/15min global, 20 req/15min auth)
-- Input validation on all endpoints
-- Global error handling with Prisma error mapping
+Each organization operates in complete **tenant-level data isolation**, backed by a fine-grained **Role-Based Access Control (RBAC)** matrix featuring **42 system permissions**.
 
-## Getting Started
+> [!IMPORTANT]
+> **Production API Base Endpoint**: `https://emnex-api.vercel.app/api/v1`  
+> All requests must include standard `Content-Type: application/json` headers. Authenticated endpoints require an `Authorization: Bearer <accessToken>` header or HTTP-only auth cookies.
+
+---
+
+## 🏗️ System Architecture
+
+```mermaid
+graph TD
+    Client[📱 Client App / Postman] -->|HTTPS Requests| Express[🚀 Express 5 API Server]
+    
+    subgraph Middleware Pipeline
+        Express --> Helmet[🛡️ Helmet Security Headers]
+        Helmet --> RateLimit[⏱️ Rate Limiting]
+        RateLimit --> Cors[🌐 CORS Protection]
+        Cors --> AuthCheck[🔑 JWT Auth & Status Check]
+        AuthCheck --> PermCheck[🔐 RBAC Permission Verification]
+        PermCheck --> ZodVal[📋 Zod Input Validation]
+    end
+    
+    ZodVal --> Controller[🎮 Controller Layer]
+    Controller --> Service[💼 Service Layer]
+    
+    subgraph Data & Integrations
+        Service --> Prisma[(🐘 PostgreSQL / Prisma 7)]
+        Service --> Stripe[💳 Stripe Payments API]
+        Service --> Cloudinary[🖼️ Cloudinary Avatar Storage]
+        Service --> Nodemailer[📧 Nodemailer SMTP Emails]
+    end
+    
+    Service --> Audit[📜 Fire-and-Forget Audit Logger]
+    Audit --> Prisma
+```
+
+---
+
+## ✨ Key Features
+
+| Feature | Description |
+| :--- | :--- |
+| **🏢 Multi-Tenant Isolation** | Data automatically scoped by `organizationId` across all entities. |
+| **🔐 Granular RBAC (42 Perms)** | 4 pre-configured system roles (`ADMIN`, `HR_MANAGER`, `FINANCE_MANAGER`, `EMPLOYEE`) + custom role support. |
+| **🔑 Dual Authentication** | JWT Access (24h) + Refresh Token (7d) in HTTP-only cookies + Google OAuth 2.0 integration. |
+| **👥 Employee Lifecycle** | Hire → Assign Role & Department → Suspend/Inactivate → Terminate with strict admin locks. |
+| **📋 Projects & Tasks** | Multi-status project management, task assignment, priority tagging, and due-date tracking. |
+| **📤 Work Submission Loop** | Employee hour logging → Manager review → Approve / Reject with mandatory feedback. |
+| **💵 Automated Payroll** | Auto-calculated gross/net pay from approved work submission hours and hourly/monthly rates. |
+| **💳 Stripe Payments** | One-click Stripe Checkout Session generation + webhook listener for status sync (`PAID`). |
+| **📊 Real-time Analytics** | Role-tailored dashboard metrics for Admins, HR Managers, Finance Managers, and Employees. |
+| **📜 Comprehensive Audit Logs** | 27 audit actions recorded with user context, entity IDs, metadata, and IP address. |
+| **🛡️ Edge Protection** | Safeguards against self-approval, self-termination, admin locking, and permission escalation. |
+
+---
+
+## 🛠️ Tech Stack
+
+```ascii
+ ┌───────────────────┬─────────────────────────────────────────────────────────────┐
+ │ Technology        │ Component / Functionality                                   │
+ ├───────────────────┼─────────────────────────────────────────────────────────────┤
+ │ Runtime & Server  │ Node.js 18+ • Express 5.x • TypeScript 5.x                   │
+ │ Database & ORM    │ PostgreSQL 16 • Prisma 7 ORM (@prisma/adapter-pg)          │
+ │ Authentication    │ JWT (JsonWebToken) • Bcrypt Password Hashing • Google OAuth │
+ │ Validation & Lint │ Zod Schema Validation • Biome Code Formatter & Linter        │
+ │ Payment Gateway   │ Stripe Checkout API • Stripe Webhook Signature Verification │
+ │ File Storage      │ Cloudinary API • Multer Multipart Middleware                │
+ │ Email Service     │ Nodemailer • EJS HTML Email Templates                       │
+ └───────────────────┴─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 📚 Documentation Hub
+
+Explore detailed documentation modules:
+
+| Document | Link | Description |
+| :--- | :--- | :--- |
+| **Architecture Guide** | [ARCHITECTURE.md](./ARCHITECTURE.md) | Deep dive into codebase structure, 5-file module pattern, error handling & middleware. |
+| **Database Schema** | [DATABASE.md](./DATABASE.md) | ERD diagrams, model definitions, enums, soft-delete strategies, and indexes. |
+| **API Reference** | [API_INTEGRATION.md](./API_INTEGRATION.md) | Endpoint specifications, payloads, responses, and query parameters. |
+| **System Workflows** | [WORKFLOW.md](./WORKFLOW.md) | State machine diagrams, data pipelines, payroll math, and webhook handling. |
+
+---
+
+## 🚀 Getting Started
 
 ### Prerequisites
 
-- Node.js 18+
-- PostgreSQL database
-- Stripe account (for payments)
-- Cloudinary account (for file uploads)
-- Google Cloud Console project (for OAuth)
-- SMTP email account (for notifications)
+Ensure you have the following installed locally:
+- **Node.js**: `v18.0.0` or higher
+- **PostgreSQL**: `v14.0` or higher (or cloud provider like Neon / Supabase)
+- **Stripe Account**: For testing payment checkout sessions
+- **Cloudinary Account**: For avatar uploads
+
+---
 
 ### Installation
 
 ```bash
-git clone <repository-url>
+# Clone the repository
+git clone https://github.com/mariyamnavila/emnex-backend.git
+
+# Navigate to project directory
 cd EmNex-Backend
+
+# Install dependencies
 npm install
 ```
 
-### Environment Variables
+---
 
-Create a `.env` file in the root directory:
+### Environment Configuration
+
+Create a `.env` file in the root directory and configure the variables:
 
 ```env
-# Server
+# Server Configuration
 NODE_ENV=development
 PORT=5000
-
-# Database
-DATABASE_URL=postgresql://user:password@host:5432/dbname?pgbouncer=true&connection_limit=5
-
-# Frontend
+APP_URL=http://localhost:5000
 FRONTEND_URL=http://localhost:3000
 
-# JWT
-JWT_ACCESS_SECRET=your-access-secret-min-32-chars
-JWT_REFRESH_SECRET=your-refresh-secret-min-32-chars
-JWT_ACCESS_EXPIRES_IN=1d
-JWT_REFRESH_EXPIRES_IN=7d
+# Database Connection (PostgreSQL)
+DATABASE_URL="postgresql://user:password@localhost:5432/emnex_db?schema=public"
 
-# Bcrypt
+# Authentication Secrets
+JWT_ACCESS_SECRET="your-super-secret-access-token-key-min-32-chars"
+JWT_REFRESH_SECRET="your-super-secret-refresh-token-key-min-32-chars"
+JWT_ACCESS_EXPIRES_IN="1d"
+JWT_REFRESH_EXPIRES_IN="7d"
 BCRYPT_SALT_ROUNDS=12
 
-# Google OAuth
-GOOGLE_CLIENT_ID=your-google-client-id
+# Third-Party Integrations
+GOOGLE_CLIENT_ID="your-google-oauth-client-id"
+STRIPE_SECRET_KEY="sk_test_51..."
+STRIPE_WEBHOOK_SECRET="whsec_..."
 
-# Stripe
-STRIPE_SECRET_KEY=sk_test_xxx
-STRIPE_WEBHOOK_SECRET=whsec_xxx
+# Cloudinary Setup
+CLOUDINARY_CLOUD_NAME="your-cloudinary-cloud-name"
+CLOUDINARY_API_KEY="your-cloudinary-api-key"
+CLOUDINARY_API_SECRET="your-cloudinary-api-secret"
 
-# App
-APP_URL=http://localhost:5000
-
-# Cloudinary
-CLOUDINARY_CLOUD_NAME=your-cloud-name
-CLOUDINARY_API_KEY=your-api-key
-CLOUDINARY_API_SECRET=your-api-secret
-
-# SMTP (Gmail)
-SMTP_USER=your-email@gmail.com
-SMTP_PASSWORD=your-app-password
+# Nodemailer Email Credentials
+SMTP_USER="your-email@gmail.com"
+SMTP_PASSWORD="your-gmail-app-password"
 ```
+
+---
 
 ### Database Setup
 
 ```bash
-# Run migrations
-npx prisma migrate dev
+# Generate Prisma Client & Push Schema to Database
+npx prisma db push
 
-# Seed system roles and permissions (runs automatically on server start)
-npx tsx src/server.ts
+# Run Database Migrations (Alternative)
+npx prisma migrate dev --name init
+
+# Seed System Roles & Permissions (Automated on server start)
+npm run dev
 ```
+
+---
 
 ### Running the Server
 
 ```bash
-# Development (with hot reload)
+# Development Mode (Hot Reload with tsx)
 npm run dev
 
-# Production build
+# Production Build
 npm run build
+
+# Start Production Server
 npm start
 
-# Stripe webhook forwarding (separate terminal)
+# Stripe Webhook Listener (Local Testing)
 npm run stripe:webhook
 ```
 
-Server runs at `http://localhost:5000`
+The API will be live at `http://localhost:5000/api/v1`
 
 ---
 
-## Authentication & Authorization
+## 🔐 Authentication & Security
 
-### Authentication Flow
+> [!NOTE]
+> EmNex implements multi-layered security protections out of the box.
 
-1. **Register**: Creates organization + admin user → returns JWT tokens
-2. **Login**: Validates credentials → returns JWT tokens
-3. **Google Login**: Validates Google ID token → returns JWT tokens
-4. **Refresh Token**: Exchange refresh token for new access token
-5. **Logout**: Clears cookies
+```
+Client Request ──► Rate Limiter ──► Helmet Headers ──► CORS Check ──► JWT Verification ──► RBAC Check ──► Controller
+```
 
-### Token Storage
-
-Tokens are stored as HTTP-only cookies:
-- `accessToken` — 24 hour expiry
-- `refreshToken` — 7 day expiry
-
-Also returned in response body for non-cookie clients (Bearer token).
-
-### Authorization Flow
-
-1. `auth()` middleware verifies JWT and loads user + role + permissions from DB
-2. `checkPermission(...permissions)` middleware checks if user has required permissions
-3. Both must pass before reaching the controller
-
-### Password Requirements
-
-- Minimum 8 characters
-- At least 1 lowercase letter
-- At least 1 uppercase letter
-- At least 1 number
-- At least 1 special character
+- **HTTP-Only Cookies**: Access tokens (`24h`) and Refresh tokens (`7d`) stored securely.
+- **Token Invalidation**: Password updates increment `tokenVersion`, invalidating active refresh tokens globally.
+- **Rate Limiting**: 
+  - Global API: `100 requests / 15 mins` per IP
+  - Auth Routes (`/auth/*`): `20 requests / 15 mins` per IP
+- **Input Sanitization**: Strict Zod schemas sanitize and validate every single incoming payload field.
 
 ---
 
-## Roles & Permissions
+## 🛡️ Roles & Permissions (RBAC)
 
-### System Roles (Seeded)
+### Pre-Configured System Roles
 
-| Role | Description | Permissions |
-|------|-------------|-------------|
-| ADMIN | Full organization management | All 42 permissions |
-| HR_MANAGER | Workforce management | organization.view, employee.*, department.*, project.view, task.view, submission.*, analytics.view |
-| FINANCE_MANAGER | Financial operations | organization.view, employee.view, payroll.*, payment.*, analytics.view |
-| EMPLOYEE | Basic employee access | task.view, submission.view, submission.create, payroll.view_own, permission.view |
-
-### All 42 Permissions
-
-| Category | Permissions |
-|----------|------------|
-| Organization | `organization.view`, `organization.update` |
-| Employee | `employee.view`, `employee.create`, `employee.update`, `employee.delete` |
-| Department | `department.view`, `department.create`, `department.update`, `department.delete` |
-| Project | `project.view`, `project.create`, `project.update`, `project.delete` |
-| Task | `task.view`, `task.create`, `task.update`, `task.delete`, `task.assign` |
-| Submission | `submission.view`, `submission.create`, `submission.update`, `submission.approve`, `submission.reject` |
-| Payroll | `payroll.view`, `payroll.view_own`, `payroll.generate`, `payroll.approve`, `payroll.reject` |
-| Payment | `payment.view`, `payment.view_own`, `payment.create`, `payment.refund` |
-| Role | `role.view`, `role.create`, `role.update`, `role.delete` |
-| Permission | `permission.view`, `permission.assign` |
-| Audit | `audit.view` |
-| Analytics | `analytics.view` |
+| System Role | Primary Scope | Perms Count | Key Capabilities |
+| :--- | :--- | :---: | :--- |
+| 👑 **ADMIN** | System Administrator | `42` / `42` | Full organization management, role creation, system config. |
+| 👥 **HR_MANAGER** | Workforce & Operations | `21` / `42` | Employee hiring, department setup, work review, project creation. |
+| 💰 **FINANCE_MANAGER** | Financial Operations | `14` / `42` | Payroll generation, approval, Stripe payment execution, financials. |
+| 👤 **EMPLOYEE** | Individual Contributor | `5` / `42` | Task completion, work hour submission, own payroll/payment viewing. |
 
 ---
 
-## Soft Delete Strategy
+## ⚡ Edge Case Protections
 
-The following models use soft delete (via `deletedAt` field):
+> [!WARNING]
+> Built-in safeguards protect business integrity and prevent administrative lockouts.
 
-| Model | Impact |
-|-------|--------|
-| Role | Deleted roles are excluded from queries |
-| Department | Deleted departments are excluded from queries |
-| Project | Deleted projects excluded; deletion blocked if active tasks exist |
-| Task | Deleted tasks excluded; deletion blocked if submissions exist |
-
-Models WITHOUT soft delete (hard delete not used — records are permanent):
-- WorkSubmission
-- Payroll
-- Payment
-- AuditLog
+- 🔒 **Admin Lock**: Nobody can set the primary Admin account to `TERMINATED`, `SUSPENDED`, or `INACTIVE`.
+- 🚫 **Self-Action Block**: Users cannot terminate/suspend themselves or approve their own submissions/payrolls.
+- 🛑 **Permission Escalation Prevention**: Users can only assign permissions that they currently possess.
+- 🛡️ **Orphan Guards**: Tasks with existing submissions or Projects with active tasks cannot be deleted.
+- 🔄 **Webhook Idempotency**: Stripe Webhook events check existing transaction state to prevent duplicate payroll payouts.
 
 ---
 
-## Edge Case Protections
+## 🔌 Integrations
 
-| Protection | Description |
-|-----------|-------------|
-| Admin status lock | Nobody can set admin to TERMINATED/SUSPENDED/INACTIVE |
-| Admin termination lock | Nobody can terminate the admin account |
-| Self-action prevention | Users cannot terminate/suspend their own account |
-| Self-approval prevention | Employees cannot approve their own submissions/payrolls |
-| Self-generation prevention | Employees cannot generate their own payroll |
-| Permission scoping | Users can only assign permissions they themselves have |
-| Own role protection | Users cannot modify their own role's permissions |
-| Role rename guard | Roles assigned to users cannot be renamed |
-| Submission orphan guard | Tasks with submissions cannot be deleted |
-| Active task guard | Projects with active tasks cannot be deleted |
-| Password change token invalidation | `tokenVersion` incremented on password change |
-| Terminated employee block | Terminated employees cannot authenticate |
-| Admin data isolation | Admin-only endpoints check role name |
-| Webhook idempotency | Stripe webhook events are idempotent |
-| View_own isolation | Employees with `view_own` can only see their own payroll/payments |
+```ascii
+    [ Stripe ]         ──► Processing Card Checkout & Webhook Sync
+    [ Cloudinary ]     ──► Resizing & Storing Avatar Uploads
+    [ Google OAuth ]   ──► One-Tap Social Authentication
+    [ Nodemailer ]     ──► Generating HTML Welcome Emails with Credentials
+```
 
 ---
 
-## Services Integration
+## 📜 NPM Command Reference
 
-| Service | Purpose | Config Required |
-|---------|---------|-----------------|
-| **Stripe** | Payment processing via Checkout Sessions | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` |
-| **Cloudinary** | Avatar/image upload and hosting | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` |
-| **Google OAuth** | Social login | `GOOGLE_CLIENT_ID` |
-| **Nodemailer** | Email notifications (welcome emails) | `SMTP_USER`, `SMTP_PASSWORD` |
-| **Neon/PostgreSQL** | Database | `DATABASE_URL` |
+```bash
+# Development & Build
+npm run dev           # Start development server with hot-reload
+npm run build         # Compile TypeScript code to dist/
+npm start             # Launch compiled production bundle
 
----
+# Code Quality & Formatting
+npm run format:check  # Check formatting with Biome
+npm run format:fix    # Fix auto-formattable style issues
+npm run lint:check    # Lint codebase for errors
+npm run lint:fix      # Auto-fix lint errors
 
-## Scripts
-
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server with hot reload |
-| `npm run build` | Build for production |
-| `npm start` | Start production server |
-| `npm run stripe:webhook` | Forward Stripe webhooks to localhost |
-| `npm run format:check` | Check code formatting |
-| `npm run format:fix` | Fix code formatting |
-| `npm run lint:check` | Check linting |
-| `npm run lint:fix` | Fix linting issues |
+# Utilities
+npm run stripe:webhook # Listen & forward Stripe events locally
+```
 
 ---
 
-## Documentation
+<div align="center">
 
-- [ARCHITECTURE.md](./ARCHITECTURE.md) — Project structure, middleware, utilities, and design patterns
-- [DATABASE.md](./DATABASE.md) — Complete database schema with all models, relations, and indexes
-- [API_INTEGRATION.md](./API_INTEGRATION.md) — All 52 API endpoints with request/response examples
-- [WORKFLOW.md](./workflow.md) — System flows, data pipelines, and module connections
+Made with ❤️ by Bibi Mariyam  
+*EmNex Platform © 2026. All Rights Reserved.*
+
+</div>

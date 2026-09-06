@@ -1,485 +1,231 @@
-# Workflow
+<div align="center">
 
-System flow diagrams, module connections, and data pipelines.
+# 🔄 System Workflows & Data Pipelines
 
-## Table of Contents
+### *State Machines, Financial Pipelines & Authentication Lifecycle Diagrams*
 
-- [Documentation Links](#documentation-links)
-- [System Overview](#system-overview)
-- [Authentication Flow](#authentication-flow)
-- [Employee Lifecycle](#employee-lifecycle)
-- [Project & Task Flow](#project--task-flow)
-- [Work Submission Flow](#work-submission-flow)
-- [Payroll Pipeline](#payroll-pipeline)
-- [Payment Pipeline](#payment-pipeline)
-- [Permission Chain](#permission-chain)
-- [Audit Trail Flow](#audit-trail-flow)
-- [Module Dependency Map](#module-dependency-map)
+[![Workflows](https://img.shields.io/badge/Workflows-Interactive-brightgreen?style=for-the-badge&logo=diagramsdotnet&logoColor=white)](#-authentication--token-lifecycle)
+[![Mermaid](https://img.shields.io/badge/Mermaid.js-Enabled-ff69b4?style=for-the-badge&logo=mermaid&logoColor=white)](https://mermaid.js.org)
+
+</div>
 
 ---
 
-## Documentation Links
+## 📌 Table of Contents
 
-| File | Purpose |
-|------|---------|
-| [README.md](./README.md) | Project overview, setup, features |
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | Project structure, middleware, utilities |
-| [DATABASE.md](./DATABASE.md) | All models, relations, indexes |
-| [API_INTEGRATION.md](./API_INTEGRATION.md) | All 52 endpoints with examples |
-| [WORKFLOW.md](./WORKFLOW.md) | This file — system flows and connections |
+- [Authentication & Token Lifecycle](#-authentication--token-lifecycle)
+- [Employee Lifecycle State Machine](#-employee-lifecycle-state-machine)
+- [Project & Task Lifecycle](#-project--task-lifecycle)
+- [Work Submission & Review Loop](#-work-submission--review-loop)
+- [Automated Payroll & Stripe Payment Pipeline](#-automated-payroll--stripe-payment-pipeline)
+- [Permission Resolution Chain](#-permission-resolution-chain)
+- [Module Dependency Graph](#-module-dependency-graph)
 
 ---
 
-## System Overview
+## 🔑 Authentication & Token Lifecycle
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                     CLIENT (Frontend)                    │
-│                  Cookies / Bearer Token                  │
-└──────────────────────┬──────────────────────────────────┘
-                       │
-                       ▼
-┌─────────────────────────────────────────────────────────┐
-│                   EXPRESS APP (app.ts)                   │
-│  helmet → rateLimit → cors → json → cookieParser         │
-└──────────────────────┬──────────────────────────────────┘
-                       │
-                       ▼
-┌─────────────────────────────────────────────────────────┐
-│              ROUTE MIDDLEWARE CHAIN                      │
-│  auth() → checkPermission() → validateRequest()         │
-└──────────────────────┬──────────────────────────────────┘
-                       │
-                       ▼
-┌─────────────────────────────────────────────────────────┐
-│                  CONTROLLER → SERVICE                    │
-│              Business Logic + Validation                 │
-└───────┬──────────────┬──────────────┬───────────────────┘
-        │              │              │
-        ▼              ▼              ▼
-┌──────────────┐ ┌──────────┐ ┌──────────────┐
-│   Prisma     │ │  Stripe  │ │  Cloudinary  │
-│  PostgreSQL  │ │ Payments │ │ File Upload  │
-└──────────────┘ └──────────┘ └──────────────┘
+EmNex uses a dual JWT authentication model with Access (24h) and Refresh (7d) tokens stored in HTTP-only cookies.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Client as 📱 Client App
+    participant AuthAPI as 🔒 Auth Route
+    participant JWT as 🔑 JWT Utilities
+    participant DB as 🐘 PostgreSQL DB
+
+    Note over Client, DB: Registration & Login Flow
+    Client->>AuthAPI: POST /auth/login { email, password }
+    AuthAPI->>DB: Query User by Email
+    DB-->>AuthAPI: User Record + Hashed Password
+    AuthAPI->>AuthAPI: Verify Bcrypt Hash
+    AuthAPI->>JWT: Generate Access (24h) & Refresh (7d) Tokens
+    JWT-->>AuthAPI: Encrypted Tokens
+    AuthAPI-->>Client: 200 OK + Set-Cookie (accessToken, refreshToken)
+
+    Note over Client, DB: Token Refresh Loop
+    Client->>AuthAPI: POST /auth/refresh-token (Cookie: refreshToken)
+    AuthAPI->>JWT: Verify Refresh Token Signature
+    AuthAPI->>DB: Check User Status & tokenVersion
+    alt tokenVersion Matches & User Active
+        AuthAPI->>JWT: Generate New Access Token Pair
+        AuthAPI-->>Client: 200 OK + Refreshed Cookies
+    else Password Changed (tokenVersion Mismatch)
+        AuthAPI-->>Client: 401 Unauthorized (Force Re-login)
+    end
 ```
 
 ---
 
-## Authentication Flow
+## 👥 Employee Lifecycle State Machine
 
-```
-Register:
-  Client → POST /auth/register
-    → Validate input (Zod)
-    → Create Organization
-    → Copy system roles (ADMIN, HR_MANAGER, FINANCE_MANAGER, EMPLOYEE)
-    → Create Admin User (hash password)
-    → Create AuditLog
-    → Return JWT tokens + set cookies
+```mermaid
+stateDiagram-v2
+    [*] --> Hired: POST /employees (Create User + Employee)
+    
+    state Hired {
+        [*] --> ACTIVE: Account Setup Completed
+    }
 
-Login:
-  Client → POST /auth/login
-    → Validate input (Zod)
-    → Find user by email
-    → Check status (BLOCKED, DELETED)
-    → Check authProvider (must be CREDENTIAL)
-    → Compare password (bcrypt)
-    → Create AuditLog (LOGIN)
-    → Return JWT tokens + set cookies
+    ACTIVE --> INACTIVE: Admin/HR Deactivates
+    INACTIVE --> ACTIVE: Admin/HR Re-activates
 
-Google Login:
-  Client → POST /auth/google
-    → Verify Google ID token
-    → Find user by googleId or email
-    → If not found → reject (must register via org first)
-    → Create AuditLog (GOOGLE_LOGIN)
-    → Return JWT tokens + set cookies
+    ACTIVE --> SUSPENDED: Disciplinary Action
+    SUSPENDED --> ACTIVE: Suspension Lifted
 
-Token Refresh:
-  Client → POST /auth/refresh-token
-    → Read refreshToken from cookie
-    → Verify JWT signature
-    → Check user exists, not deleted/blocked
-    → Check tokenVersion matches (invalidates on password change)
-    → Return new token pair
+    ACTIVE --> TERMINATED: Formal Termination
+    INACTIVE --> TERMINATED: Formal Termination
+    SUSPENDED --> TERMINATED: Formal Termination
 
-Logout:
-  Client → POST /auth/logout (auth required)
-    → Clear cookies
-    → Return success
+    state TERMINATED {
+        [*] --> Locked: Revoke Access & Tokens
+    }
+
+    Locked --> [*]
 ```
 
-**Token Lifecycle**:
-```
-Register/Login → tokens issued
-  → Access token expires (24h) → /refresh-token → new pair
-  → Refresh token expires (7d) → re-login required
-  → Password changed → tokenVersion incremented → all tokens invalidated
+> [!CAUTION]
+> **Admin Safeguard**: The system primary `ADMIN` account can **NEVER** be transitioned into `SUSPENDED`, `INACTIVE`, or `TERMINATED` states.
+
+---
+
+## 📁 Project & Task Lifecycle
+
+```mermaid
+stateDiagram-v2
+    state Project_State {
+        [*] --> PLANNED
+        PLANNED --> ACTIVE: Start Project
+        ACTIVE --> ON_HOLD: Pause Project
+        ON_HOLD --> ACTIVE: Resume Project
+        ACTIVE --> COMPLETED: All Tasks Done
+        PLANNED --> CANCELLED: Cancel Project
+        ACTIVE --> CANCELLED: Cancel Project
+    }
+
+    state Task_State {
+        [*] --> TODO
+        TODO --> IN_PROGRESS: Employee Starts Work
+        IN_PROGRESS --> SUBMITTED: Work Hour Logged
+        SUBMITTED --> APPROVED: Manager Approves Work
+        SUBMITTED --> REJECTED: Manager Rejects Work
+        REJECTED --> IN_PROGRESS: Employee Fixes & Resubmits
+        APPROVED --> COMPLETED: Final Task Resolution
+    }
 ```
 
 ---
 
-## Employee Lifecycle
+## 📤 Work Submission & Review Loop
 
-```
-                     ┌──────────────┐
-                     │   Register   │
-                     │  (Admin)     │
-                     └──────┬───────┘
-                            │
-                            ▼
-                     ┌──────────────┐
-                     │ Create Emp   │ ← POST /employees
-                     │ (HR/Admin)   │    creates User + Employee
-                     └──────┬───────┘
-                            │
-              ┌─────────────┼─────────────┐
-              ▼             ▼             ▼
-        ┌──────────┐  ┌──────────┐  ┌──────────┐
-        │  ACTIVE  │  │ INACTIVE │  │SUSPENDED │
-        └────┬─────┘  └────┬─────┘  └────┬─────┘
-             │              │              │
-             │   ┌──────────┘              │
-             ▼   ▼                         ▼
-        ┌──────────┐                 ┌──────────┐
-        │ Can work │                 │TERMINATED│
-        │ Can login│                 │ (locked) │
-        │ Can view │                 └──────────┘
-        └──────────┘
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Employee as 👷 Employee
+    actor Manager as 👔 HR / Admin Manager
+    participant API as 🚀 EmNex API
+    participant DB as 🐘 Database
 
-Status Transitions:
-  ACTIVE → INACTIVE (admin/HR)
-  ACTIVE → SUSPENDED (admin/HR)
-  ACTIVE → TERMINATED (admin, or delete endpoint)
-  INACTIVE → ACTIVE (admin/HR)
-  SUSPENDED → ACTIVE (admin/HR)
-  
-Restrictions:
-  - Cannot change own status to negative state
-  - Cannot change admin's status to negative state
-  - Cannot terminate yourself
-  - Cannot terminate admin
-  - TERMINATED employees blocked at auth middleware
+    Employee->>API: POST /submissions { taskId, hoursWorked: 8, workDate }
+    API->>DB: Create WorkSubmission (Status: PENDING)
+    DB-->>Employee: 201 Created (Submission Pending)
+
+    Manager->>API: GET /submissions?status=PENDING
+    API-->>Manager: List of Pending Submissions
+
+    alt Manager Approves Work
+        Manager->>API: POST /submissions/:id/approve
+        API->>DB: Update Status -> APPROVED
+        DB-->>Manager: 200 OK (Approved)
+        Note over DB: Submission now eligible for Payroll calculation
+    else Manager Rejects Work
+        Manager->>API: POST /submissions/:id/reject { reason: "Need detailed logs" }
+        API->>DB: Update Status -> REJECTED + Store Review Note
+        DB-->>Employee: Notification: Submission Rejected
+        Employee->>API: POST /submissions (Resubmit revised hours)
+    end
 ```
 
 ---
 
-## Project & Task Flow
+## 💵 Automated Payroll & Stripe Payment Pipeline
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                    PROJECT LIFECYCLE                      │
-│                                                          │
-│  PLANNED ──→ ACTIVE ──→ COMPLETED                       │
-│    │           │                                          │
-│    │           ├──→ ON_HOLD ──→ ACTIVE                   │
-│    │           │                                          │
-│    │           └──→ CANCELLED                            │
-│    │                                                      │
-│    └──→ CANCELLED                                        │
-└─────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────┐
-│                    TASK LIFECYCLE                         │
-│                                                          │
-│  TODO ──→ IN_PROGRESS ──→ SUBMITTED ──→ APPROVED ──→ COMPLETED │
-│                │              │                            │
-│                │              └──→ REJECTED ──→ IN_PROGRESS│
-│                │                      (resubmit loop)     │
-│                └──→ COMPLETED (skip submission)           │
-└─────────────────────────────────────────────────────────┘
-
-Creation Flow:
-  Admin/HR creates Project
-    → Assigns employees to tasks
-    → Employee sees tasks via GET /tasks/my
-    → Employee works and submits via POST /submissions
-    → Manager approves/rejects
-    → Approved submissions feed into payroll generation
-
-Deletion Rules:
-  - Project: blocked if has active (non-deleted) tasks
-  - Task: blocked if has any submissions (even rejected ones)
-  - Both use soft delete (deletedAt)
+```mermaid
+graph TD
+    Sub[✅ Approved Work Submissions] --> Gen[⚙️ POST /payroll/generate]
+    
+    subgraph Payroll Service Math
+        Gen --> CalcHours[Sum Approved Hours in Date Range]
+        CalcHours --> SalaryCheck{Employee Salary Type?}
+        SalaryCheck -->|HOURLY| HourlyMath[Gross = Total Hours × Hourly Rate]
+        SalaryCheck -->|MONTHLY| MonthlyMath[Gross = Fixed Monthly Salary]
+        HourlyMath --> NetCalc[Net Amount = Gross - Deductions]
+        MonthlyMath --> NetCalc
+    end
+    
+    NetCalc --> DraftPayroll[Draft Payroll Record Created]
+    DraftPayroll --> ApprPayroll[👔 POST /payroll/:id/approve]
+    
+    ApprPayroll --> CreatePay[💳 POST /payments]
+    CreatePay --> StripeSess[Stripe Checkout Session Created]
+    StripeSess --> UserCheckout[🛒 Manager Completes Payment on Stripe]
+    
+    UserCheckout --> Webhook[⚡ POST /payments/webhook]
+    Webhook --> VerifySig{Verify Stripe Signature?}
+    VerifySig -->|Valid| UpdatePaid[Update Payment = COMPLETED & Payroll = PAID]
+    VerifySig -->|Invalid| RejectWebhook[400 Bad Request]
 ```
 
 ---
 
-## Work Submission Flow
+## 🛡️ Permission Resolution Chain
 
-```
-Employee                    Manager/Admin
-   │                              │
-   │  1. POST /submissions        │
-   │  { taskId, description,      │
-   │    hoursWorked, workDate }   │
-   │ ─────────────────────────→   │
-   │                              │
-   │  Status: PENDING             │
-   │                              │
-   │               2. GET /submissions (view all)
-   │               ←─────────────│
-   │                              │
-   │               3. POST /submissions/:id/approve
-   │               OR POST /submissions/:id/reject
-   │               { reason }     │
-   │ ←───────────────────────────│
-   │                              │
-   │  Status: APPROVED/REJECTED   │
-   │                              │
-   │  If REJECTED:                │
-   │  4. Employee can resubmit    │
-   │  POST /submissions           │
-   │  (new submission for same    │
-   │   task with updated work)    │
-   │ ─────────────────────────→   │
-   │                              │
-
-Rules:
-  - Cannot approve your own submission
-  - Rejection requires a reason (min 10 chars)
-  - Approved submissions count toward payroll
-  - Each submission = one work entry (hours + description)
+```mermaid
+graph TD
+    ClientReq[📥 Incoming Request] --> AuthMw[🔑 auth Middleware]
+    AuthMw --> ExtractToken[Extract & Verify JWT]
+    ExtractToken --> LoadUser[Load User + Organization + Role]
+    LoadUser --> FetchPerms[Load RolePermission Join Records]
+    FetchPerms --> AttachUser[Attach req.user = { userId, role, permissions }]
+    
+    AttachUser --> PermMw[🔐 checkPermission Middleware]
+    PermMw --> PermCheck{Does req.user.permissions contain ALL required perms?}
+    PermCheck -->|YES| Next[✅ Proceed to Controller]
+    PermCheck -->|NO| Forbidden[❌ 403 Forbidden Response]
 ```
 
 ---
 
-## Payroll Pipeline
+## 🔗 Module Dependency Graph
 
-```
-┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
-│ Approved │ →  │ Generate │ →  │ Approve  │ →  │  Create  │
-│Submissions│   │ Payroll  │   │ Payroll  │   │ Payment  │
-└──────────┘    └──────────┘    └──────────┘    └──────────┘
-
-Step 1: Generate Payroll
-  Finance Manager → POST /payroll/generate
-    { employeeId, periodStart, periodEnd, deductions }
-  
-  Service:
-    → Find all APPROVED submissions in date range
-    → Calculate grossAmount (sum of hours × rate)
-    → Subtract deductions
-    → netAmount = gross - deductions
-    → Create Payroll record (status: GENERATED)
-    → Create AuditLog
-
-Step 2: Approve Payroll
-  Finance Manager → POST /payroll/:id/approve
-  
-  Service:
-    → Check payroll status is GENERATED
-    → Cannot approve own payroll
-    → Update status to APPROVED
-    → Create AuditLog
-
-Step 3: Create Payment
-  Finance Manager → POST /payments
-    { payrollId, currency }
-  
-  Service:
-    → Check payroll is APPROVED
-    → Create Stripe Checkout Session
-    → Create Payment record (status: PENDING)
-    → Return session URL
-    → Create AuditLog
-
-Step 4: Stripe Webhook
-  Stripe → POST /payments/webhook
-  
-  Service:
-    → Verify Stripe signature
-    → Handle checkout.session.completed
-    → Update Payment status to COMPLETED
-    → Update Payroll status to PAID
-    → Idempotent (skips if already processed)
-
-Status Flow:
-  Payroll: DRAFT → GENERATED → APPROVED → PROCESSING → PAID
-                                            ↓
-                                         REJECTED
-  
-  Payment: PENDING → PROCESSING → COMPLETED
-                                    ↓
-                                 FAILED/REFUNDED
+```mermaid
+graph TD
+    Auth[🔑 Auth Module] --> Org[🏢 Organization Module]
+    Auth --> Role[🛡️ Role Module]
+    Role --> Perm[🔐 Permission Module]
+    
+    Org --> Dept[🏛️ Department Module]
+    Org --> Emp[👥 Employee Module]
+    Dept --> Emp
+    
+    Emp --> Proj[📁 Project Module]
+    Proj --> Task[📋 Task Module]
+    Emp --> Task
+    
+    Task --> Sub[📤 Submission Module]
+    Emp --> Sub
+    
+    Sub --> Pay[💵 Payroll Module]
+    Emp --> Pay
+    
+    Pay --> Pmt[💳 Payment Module]
+    Emp --> Pmt
+    
+    Emp --> Audit[📜 Audit Log Module]
+    Pmt --> Audit
 ```
 
 ---
 
-## Payment Pipeline
-
-```
-Frontend                     Backend                      Stripe
-   │                            │                            │
-   │ 1. POST /payments          │                            │
-   │ { payrollId, currency }    │                            │
-   │ ────────────────────────→  │                            │
-   │                            │ 2. stripe.checkout         │
-   │                            │    .sessions.create()      │
-   │                            │ ──────────────────────→    │
-   │                            │                            │
-   │                            │ ←──────────────────────    │
-   │                            │    session.id, session.url │
-   │  ←────────────────────────│                            │
-   │  { sessionId, sessionUrl } │                            │
-   │                            │                            │
-   │ 3. User completes payment  │                            │
-   │ ──────────────────────────────────────────────────────→ │
-   │                            │                            │
-   │                            │ 4. Stripe Webhook          │
-   │                            │ POST /payments/webhook     │
-   │                            │ ←────────────────────────  │
-   │                            │                            │
-   │                            │ 5. Verify signature        │
-   │                            │ Update Payment → COMPLETED │
-   │                            │ Update Payroll → PAID      │
-   │                            │                            │
-```
-
----
-
-## Permission Chain
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                    SEED (First Run)                       │
-│                                                          │
-│  1. Create 42 Permission records                        │
-│  2. Create 4 System Roles (isSystem: true, orgId: null) │
-│     - ADMIN → all 42 permissions                        │
-│     - HR_MANAGER → workforce permissions                │
-│     - FINANCE_MANAGER → financial permissions           │
-│     - EMPLOYEE → basic permissions                      │
-└──────────────────────┬──────────────────────────────────┘
-                       │
-                       ▼
-┌─────────────────────────────────────────────────────────┐
-│               ORGANIZATION REGISTRATION                  │
-│                                                          │
-│  1. Create Organization                                 │
-│  2. Copy each system role → new role (orgId set)        │
-│  3. Assign ADMIN role to first user                     │
-│  4. User gets role → RolePermission → Permission names  │
-└──────────────────────┬──────────────────────────────────┘
-                       │
-                       ▼
-┌─────────────────────────────────────────────────────────┐
-│                  REQUEST MIDDLEWARE                       │
-│                                                          │
-│  auth()                                                 │
-│    → Verify JWT                                         │
-│    → Load user + role + permissions from DB             │
-│    → Attach to req.user.permissions: string[]           │
-│                                                          │
-│  checkPermission("task.create")                         │
-│    → Read req.user.permissions                          │
-│    → Check "task.create" exists                         │
-│    → If no → 403 Forbidden                              │
-│    → If yes → next()                                    │
-└──────────────────────┬──────────────────────────────────┘
-                       │
-                       ▼
-┌─────────────────────────────────────────────────────────┐
-│                  SERVICE LAYER                           │
-│                                                          │
-│  checkUserPermission(userId, perm) ← for inline checks  │
-│    → Query DB for fresh permissions                     │
-│    → Used in payroll.view_own checks                    │
-└─────────────────────────────────────────────────────────┘
-```
-
----
-
-## Audit Trail Flow
-
-```
-Every significant action:
-
-  Service Function
-       │
-       ├── 1. Perform business operation (create/update/delete)
-       │
-       └── 2. createAuditLog({ user, action, entity, entityId, metadata })
-              │
-              └── prisma.auditLog.create() (fire-and-forget, errors logged silently)
-
-Queryable via:
-  GET /audit-logs → paginated list
-  GET /audit-logs/:id → single record
-
-Filterable by: entity, action, userId, date range
-```
-
----
-
-## Module Dependency Map
-
-```
-                    ┌──────────┐
-                    │   Auth   │
-                    └────┬─────┘
-                         │
-          ┌──────────────┼──────────────┐
-          ▼              ▼              ▼
-   ┌────────────┐ ┌────────────┐ ┌────────────┐
-   │Organization│ │    Role    │ │  Employee  │
-   └────────────┘ └─────┬──────┘ └─────┬──────┘
-                         │              │
-                    ┌────┴────┐    ┌────┴────┐
-                    │Permission│   │Department│
-                    └─────────┘    └─────────┘
-                                       │
-                         ┌─────────────┼─────────────┐
-                         ▼             ▼             │
-                  ┌────────────┐ ┌──────────┐        │
-                  │   Project  │ │   Task   │        │
-                  └────────────┘ └─────┬────┘        │
-                                       │             │
-                                       ▼             │
-                                ┌────────────┐       │
-                                │ Submission │       │
-                                └─────┬──────┘       │
-                                      │              │
-                        ┌─────────────┼─────────────┐
-                        ▼             ▼             │
-                 ┌────────────┐ ┌──────────┐        │
-                 │  Payroll   │ │ Payment  │        │
-                 └────────────┘ └──────────┘        │
-                                                    │
-                                              ┌─────┴──────┐
-                                              │ Audit Log  │
-                                              └────────────┘
-
-Dependency Rules:
-  - Employee depends on: User, Role, Department (optional)
-  - Task depends on: Project, Employee
-  - Submission depends on: Task, Employee
-  - Payroll depends on: Employee, Organization
-  - Payment depends on: Payroll, Employee, Organization
-  - AuditLog depends on: User, Organization
-
-Cascade Delete:
-  Organization deleted → all child records deleted
-  Project soft-deleted → tasks remain (soft-deleted separately)
-  Task soft-deleted → submissions remain (permanent)
-```
-
----
-
-## Data Flow Summary
-
-```
-User Action          API Endpoint              Service              Database
-─────────────────────────────────────────────────────────────────────────────
-Register             POST /auth/register       AuthService.register  Organization + User + Roles
-Login                POST /auth/login          AuthService.loginUser User (read)
-Create Employee      POST /employees           EmployeeService       User + Employee + Email
-Assign Task          POST /tasks/:id/assign    TaskService           Task (update)
-Submit Work          POST /submissions         SubmissionService     WorkSubmission
-Approve Submission   POST /submissions/:id/approve  SubmissionService  WorkSubmission (update)
-Generate Payroll     POST /payroll/generate    PayrollService        Payroll (create)
-Approve Payroll      POST /payroll/:id/approve PayrollService       Payroll (update)
-Create Payment       POST /payments            PaymentService        Payment (create) + Stripe
-Webhook              POST /payments/webhook    PaymentService        Payment + Payroll (update)
-View Analytics       GET /analytics/dashboard  AnalyticsService      Multiple (read)
-```
+[⬅️ Return to README.md](./README.md)

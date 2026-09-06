@@ -1,330 +1,219 @@
-# Database Schema
+<div align="center">
 
-## Overview
+# 🐘 Database Schema & Data Models
 
-- **Database**: PostgreSQL
-- **ORM**: Prisma 7 with `@prisma/adapter-pg`
-- **Schema Style**: Multi-file (`prisma/schema/*.prisma`)
-- **ID Strategy**: UUID (`@default(uuid())`)
-- **Total Models**: 13
-- **Total Enums**: 11
+### *PostgreSQL & Prisma 7 Relational Database Architecture*
 
----
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org)
+[![Prisma](https://img.shields.io/badge/Prisma-7.x-2D3748?style=for-the-badge&logo=prisma&logoColor=white)](https://www.prisma.io)
+[![Multi-Tenant](https://img.shields.io/badge/Multi--Tenant-Isolated-green?style=for-the-badge)](#-multi-tenant-data-model)
 
-## Enums
-
-| Enum | Values |
-|------|--------|
-| `AuthProvider` | `CREDENTIAL`, `GOOGLE` |
-| `UserStatus` | `ACTIVE`, `BLOCKED`, `DELETED` |
-| `SalaryType` | `MONTHLY`, `HOURLY` |
-| `EmployeeStatus` | `ACTIVE`, `INACTIVE`, `SUSPENDED`, `TERMINATED` |
-| `ProjectStatus` | `PLANNED`, `ACTIVE`, `ON_HOLD`, `COMPLETED`, `CANCELLED` |
-| `TaskStatus` | `TODO`, `IN_PROGRESS`, `SUBMITTED`, `APPROVED`, `REJECTED`, `COMPLETED` |
-| `TaskPriority` | `LOW`, `MEDIUM`, `HIGH`, `URGENT` |
-| `SubmissionStatus` | `PENDING`, `APPROVED`, `REJECTED` |
-| `PayrollStatus` | `DRAFT`, `GENERATED`, `APPROVED`, `PROCESSING`, `PAID`, `REJECTED` |
-| `PaymentGateway` | `STRIPE`, `SSLCOMMERZ`, `BKASH` |
-| `PaymentStatus` | `PENDING`, `PROCESSING`, `COMPLETED`, `FAILED`, `REFUNDED` |
+</div>
 
 ---
 
-## Models
+## 📌 Table of Contents
 
-### Organization
-
-Multi-tenant root entity. All other models are scoped to an organization.
-
-| Field | Type | Attributes |
-|-------|------|------------|
-| `id` | String | `@id @default(uuid())` |
-| `name` | String | |
-| `slug` | String | `@unique` |
-| `createdAt` | DateTime | `@default(now())` |
-| `updatedAt` | DateTime | `@updatedAt` |
-
-**Relations**: users[], roles[], departments[], employees[], projects[], payrolls[], payments[], auditLogs[]
+- [Database Overview](#-database-overview)
+- [Entity Relationship Diagram (ERD)](#-entity-relationship-diagram-erd)
+- [Enum Reference Catalog](#-enum-reference-catalog)
+- [Data Models Reference](#-data-models-reference)
+- [Soft Delete & Retention Strategy](#-soft-delete--retention-strategy)
+- [Multi-Tenant Data Scoping](#-multi-tenant-data-scoping)
 
 ---
 
-### User
+## 📊 Database Overview
 
-Central user record. Links to organization, role, and optionally an employee profile.
-
-| Field | Type | Attributes |
-|-------|------|------------|
-| `id` | String | `@id @default(uuid())` |
-| `organizationId` | String | FK → Organization |
-| `name` | String | |
-| `email` | String | `@unique` |
-| `password` | String? | Nullable for Google OAuth users |
-| `avatar` | String? | Cloudinary URL |
-| `googleId` | String? | `@unique` |
-| `authProvider` | AuthProvider | `@default(CREDENTIAL)` |
-| `emailVerified` | Boolean | `@default(false)` |
-| `roleId` | String | FK → Role |
-| `status` | UserStatus | `@default(ACTIVE)` |
-| `isActive` | Boolean | `@default(true)` |
-| `isDeleted` | Boolean | `@default(false)` |
-| `mustChangePassword` | Boolean | `@default(false)` |
-| `tokenVersion` | Int | `@default(0)` — incremented on password change |
-| `deletedAt` | DateTime? | |
-| `createdAt` | DateTime | `@default(now())` |
-| `updatedAt` | DateTime | `@updatedAt` |
-
-**Relations**: role, organization, employee?, auditLogs[]
-**Indexes**: `@@unique([email])`, `@@index([organizationId])`, `@@index([roleId])`
+- **Engine**: PostgreSQL 16
+- **ORM**: Prisma 7 (with `@prisma/adapter-pg` driver)
+- **Primary Key Strategy**: UUID v4 (`@default(uuid())`)
+- **Schema Management**: Multi-file split schemas (`prisma/schema/*.prisma`)
+- **Total Entities**: **13 Models** | **11 Enums**
 
 ---
 
-### Role
+## 📐 Entity Relationship Diagram (ERD)
 
-System roles (ADMIN, HR_MANAGER, FINANCE_MANAGER, EMPLOYEE) are templates with `isSystem: true, organizationId: null`. When an organization is registered, system roles are copied with the organization's ID.
+```mermaid
+erDiagram
+    Organization ||--o{ User : "has many"
+    Organization ||--o{ Role : "has many"
+    Organization ||--o{ Department : "has many"
+    Organization ||--o{ Employee : "has many"
+    Organization ||--o{ Project : "has many"
+    Organization ||--o{ Payroll : "has many"
+    Organization ||--o{ Payment : "has many"
+    Organization ||--o{ AuditLog : "has many"
 
-| Field | Type | Attributes |
-|-------|------|------------|
-| `id` | String | `@id @default(uuid())` |
-| `name` | String | |
-| `description` | String? | |
-| `isSystem` | Boolean | `@default(false)` |
-| `organizationId` | String? | FK → Organization, nullable |
-| `createdAt` | DateTime | `@default(now())` |
-| `updatedAt` | DateTime | `@updatedAt` |
-| `deletedAt` | DateTime? | Soft delete |
+    User ||--o| Employee : "one-to-one"
+    User }|--|| Role : "belongs to"
+    User ||--o{ AuditLog : "triggers"
 
-**Relations**: organization?, users[], permissions[] (RolePermission)
-**Indexes**: `@@unique([organizationId, name])`, `@@index([organizationId])`
+    Role ||--o{ RolePermission : "has"
+    Permission ||--o{ RolePermission : "assigned to"
 
----
+    Employee }|--o| Department : "belongs to"
+    Employee ||--o{ Task : "assigned"
+    Employee ||--o{ WorkSubmission : "submits"
+    Employee ||--o{ Payroll : "receives"
+    Employee ||--o{ Payment : "paid via"
 
-### Permission
+    Project ||--o{ Task : "contains"
+    Task ||--o{ WorkSubmission : "logged under"
 
-Global permission definitions. Created by seed, never modified at runtime.
-
-| Field | Type | Attributes |
-|-------|------|------------|
-| `id` | String | `@id @default(uuid())` |
-| `name` | String | `@unique` |
-| `description` | String? | |
-| `createdAt` | DateTime | `@default(now())` |
-
-**Relations**: roles[] (RolePermission)
-
----
-
-### RolePermission
-
-Junction table linking roles to permissions.
-
-| Field | Type | Attributes |
-|-------|------|------------|
-| `id` | String | `@id @default(uuid())` |
-| `roleId` | String | FK → Role |
-| `permissionId` | String | FK → Permission |
-
-**Relations**: role, permission
-**Indexes**: `@@unique([roleId, permissionId])`
-
----
-
-### Department
-
-| Field | Type | Attributes |
-|-------|------|------------|
-| `id` | String | `@id @default(uuid())` |
-| `organizationId` | String | FK → Organization |
-| `name` | String | |
-| `description` | String? | |
-| `createdAt` | DateTime | `@default(now())` |
-| `updatedAt` | DateTime | `@updatedAt` |
-| `deletedAt` | DateTime? | Soft delete |
-
-**Relations**: organization, employees[]
-**Indexes**: `@@unique([organizationId, name])`, `@@index([organizationId])`
-
----
-
-### Employee
-
-Links a User to employment details. One-to-one with User.
-
-| Field | Type | Attributes |
-|-------|------|------------|
-| `id` | String | `@id @default(uuid())` |
-| `organizationId` | String | FK → Organization |
-| `userId` | String | `@unique`, FK → User |
-| `departmentId` | String? | FK → Department, nullable |
-| `employeeCode` | String | Auto-generated (EMP-001, EMP-002, ...) |
-| `jobTitle` | String | |
-| `salaryType` | SalaryType | `MONTHLY` or `HOURLY` |
-| `salary` | Decimal? | Required for MONTHLY |
-| `hourlyRate` | Decimal? | Required for HOURLY |
-| `joiningDate` | DateTime | |
-| `status` | EmployeeStatus | `@default(ACTIVE)` |
-| `createdAt` | DateTime | `@default(now())` |
-| `updatedAt` | DateTime | `@updatedAt` |
-| `deletedAt` | DateTime? | |
-
-**Relations**: organization, user, department?, tasks[], submissions[], payrolls[], payments[]
-**Indexes**: `@@unique([organizationId, employeeCode])`, `@@index([organizationId])`, `@@index([departmentId])`, `@@index([status])`
-
----
-
-### Project
-
-| Field | Type | Attributes |
-|-------|------|------------|
-| `id` | String | `@id @default(uuid())` |
-| `organizationId` | String | FK → Organization |
-| `name` | String | |
-| `description` | String? | |
-| `startDate` | DateTime? | |
-| `endDate` | DateTime? | |
-| `budget` | Decimal? | |
-| `status` | ProjectStatus | `@default(PLANNED)` |
-| `createdAt` | DateTime | `@default(now())` |
-| `updatedAt` | DateTime | `@updatedAt` |
-| `deletedAt` | DateTime? | Soft delete |
-
-**Relations**: organization, tasks[]
-**Indexes**: `@@index([organizationId])`, `@@index([status])`
-
----
-
-### Task
-
-| Field | Type | Attributes |
-|-------|------|------------|
-| `id` | String | `@id @default(uuid())` |
-| `projectId` | String | FK → Project |
-| `employeeId` | String | FK → Employee |
-| `title` | String | |
-| `description` | String? | |
-| `estimatedHours` | Decimal? | |
-| `priority` | TaskPriority | `@default(MEDIUM)` |
-| `status` | TaskStatus | `@default(TODO)` |
-| `dueDate` | DateTime? | |
-| `createdAt` | DateTime | `@default(now())` |
-| `updatedAt` | DateTime | `@updatedAt` |
-| `deletedAt` | DateTime? | Soft delete |
-
-**Relations**: project, employee, submissions[]
-**Indexes**: `@@index([projectId])`, `@@index([employeeId])`, `@@index([status])`, `@@index([dueDate])`
-
----
-
-### WorkSubmission
-
-| Field | Type | Attributes |
-|-------|------|------------|
-| `id` | String | `@id @default(uuid())` |
-| `taskId` | String | FK → Task |
-| `employeeId` | String | FK → Employee |
-| `description` | String | |
-| `hoursWorked` | Decimal | |
-| `workDate` | DateTime | |
-| `status` | SubmissionStatus | `@default(PENDING)` |
-| `reviewedBy` | String? | User ID of reviewer |
-| `reviewedAt` | DateTime? | |
-| `reviewNote` | String? | Required for rejections |
-| `createdAt` | DateTime | `@default(now())` |
-| `updatedAt` | DateTime | `@updatedAt` |
-
-**Relations**: task, employee
-**Indexes**: `@@index([taskId])`, `@@index([employeeId])`, `@@index([status])`
-
----
-
-### Payroll
-
-| Field | Type | Attributes |
-|-------|------|------------|
-| `id` | String | `@id @default(uuid())` |
-| `organizationId` | String | FK → Organization |
-| `employeeId` | String | FK → Employee |
-| `periodStart` | DateTime | |
-| `periodEnd` | DateTime | |
-| `grossAmount` | Decimal | Sum of approved submission hours × rate |
-| `deductions` | Decimal | `@default(0)` |
-| `netAmount` | Decimal | grossAmount - deductions |
-| `status` | PayrollStatus | `@default(DRAFT)` |
-| `createdAt` | DateTime | `@default(now())` |
-| `updatedAt` | DateTime | `@updatedAt` |
-
-**Relations**: organization, employee, payment?
-**Indexes**: `@@unique([employeeId, periodStart, periodEnd])`, `@@index([organizationId])`, `@@index([employeeId])`, `@@index([status])`
-
----
-
-### Payment
-
-| Field | Type | Attributes |
-|-------|------|------------|
-| `id` | String | `@id @default(uuid())` |
-| `organizationId` | String | FK → Organization |
-| `payrollId` | String | `@unique`, FK → Payroll |
-| `employeeId` | String | FK → Employee |
-| `amount` | Decimal | |
-| `currency` | String | `@default("BDT")` |
-| `transactionId` | String? | `@unique` — Stripe payment intent ID |
-| `gateway` | PaymentGateway | `@default(STRIPE)` |
-| `status` | PaymentStatus | `@default(PENDING)` |
-| `createdAt` | DateTime | `@default(now())` |
-| `updatedAt` | DateTime | `@updatedAt` |
-
-**Relations**: organization, payroll, employee
-**Indexes**: `@@index([organizationId])`, `@@index([employeeId])`, `@@index([status])`
-
----
-
-### AuditLog
-
-| Field | Type | Attributes |
-|-------|------|------------|
-| `id` | String | `@id @default(uuid())` |
-| `organizationId` | String | FK → Organization |
-| `userId` | String | FK → User |
-| `action` | String | Audit action type |
-| `entity` | String | Model name |
-| `entityId` | String? | Record ID |
-| `metadata` | Json? | Additional context |
-| `ipAddress` | String? | |
-| `createdAt` | DateTime | `@default(now())` |
-
-**Relations**: organization, user
-**Indexes**: `@@index([organizationId])`, `@@index([userId])`, `@@index([entity])`, `@@index([createdAt])`
-
----
-
-## Entity Relationship Diagram
-
-```
-Organization ──┬── User ──── Role ──── Permission
-               │   │          (via RolePermission)
-               │   └── Employee ──┬── Department
-               │                   ├── Task ── Project
-               │                   ├── WorkSubmission
-               │                   ├── Payroll ── Payment
-               │                   └── (via User)
-               ├── Department
-               ├── Project
-               ├── Payroll
-               ├── Payment
-               └── AuditLog
+    Payroll ||--o| Payment : "settled by"
 ```
 
-## Soft Delete Models
+---
 
-| Model | Field | Query Filter |
-|-------|-------|-------------|
-| Role | `deletedAt` | `where: { deletedAt: null }` |
-| Department | `deletedAt` | `where: { deletedAt: null }` |
-| Project | `deletedAt` | `where: { deletedAt: null }` |
-| Task | `deletedAt` | `where: { deletedAt: null }` |
+## 🔠 Enum Reference Catalog
 
-Delete operation: `prisma.model.update({ data: { deletedAt: new Date() } })`
+| Enum Name | Defined Values | Usage / Description |
+| :--- | :--- | :--- |
+| `AuthProvider` | `CREDENTIAL`, `GOOGLE` | Authentication mechanism used by User |
+| `UserStatus` | `ACTIVE`, `BLOCKED`, `DELETED` | Account authorization state |
+| `EmployeeStatus` | `ACTIVE`, `INACTIVE`, `SUSPENDED`, `TERMINATED` | Employment lifecycle state |
+| `SalaryType` | `MONTHLY`, `HOURLY` | Employee payroll calculation model |
+| `ProjectStatus` | `PLANNED`, `ACTIVE`, `ON_HOLD`, `COMPLETED`, `CANCELLED` | Project lifecycle status |
+| `TaskStatus` | `TODO`, `IN_PROGRESS`, `SUBMITTED`, `APPROVED`, `REJECTED`, `COMPLETED` | Individual task progress state |
+| `TaskPriority` | `LOW`, `MEDIUM`, `HIGH`, `URGENT` | Urgency rating for task scheduling |
+| `SubmissionStatus` | `PENDING`, `APPROVED`, `REJECTED` | Manager review state for work logs |
+| `PayrollStatus` | `DRAFT`, `GENERATED`, `APPROVED`, `PROCESSING`, `PAID`, `REJECTED` | Payroll calculation & payout state |
+| `PaymentGateway` | `STRIPE`, `SSLCOMMERZ`, `BKASH` | Payment processor service provider |
+| `PaymentStatus` | `PENDING`, `PROCESSING`, `COMPLETED`, `FAILED`, `REFUNDED` | Financial transaction completion status |
 
-## Cascade Delete
+---
 
-All Organization relations use `onDelete: Cascade`:
-- Deleting an Organization deletes all its Users, Roles, Departments, Employees, Projects, Payrolls, Payments, AuditLogs
+## 🗄️ Data Models Reference
+
+### 1. Organization (`organization.prisma`)
+*Multi-tenant root entity. All organization data is linked to this model.*
+
+| Field | Type | Attributes | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `String` | `@id @default(uuid())` | Unique Organization UUID |
+| `name` | `String` | | Organization legal name |
+| `slug` | `String` | `@unique` | URL-friendly unique identifier |
+| `createdAt` | `DateTime` | `@default(now())` | Creation timestamp |
+| `updatedAt` | `DateTime` | `@updatedAt` | Last update timestamp |
+
+---
+
+### 2. User (`user.prisma`)
+*Authentication credentials & profile metadata.*
+
+| Field | Type | Attributes | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `String` | `@id @default(uuid())` | Unique User UUID |
+| `organizationId` | `String` | FK → `Organization` | Tenant scoping key |
+| `name` | `String` | | Full display name |
+| `email` | `String` | `@unique` | Unique login email address |
+| `password` | `String?` | | Bcrypt hash (null for OAuth) |
+| `avatar` | `String?` | | Cloudinary image URL |
+| `googleId` | `String?` | `@unique` | Google OAuth subject ID |
+| `authProvider` | `AuthProvider` | `@default(CREDENTIAL)` | Auth provider type |
+| `roleId` | `String` | FK → `Role` | Assigned Role UUID |
+| `status` | `UserStatus` | `@default(ACTIVE)` | Account status |
+| `tokenVersion` | `Int` | `@default(0)` | Security invalidation counter |
+| `createdAt` | `DateTime` | `@default(now())` | Account creation timestamp |
+
+---
+
+### 3. Role (`role.prisma`) & RolePermission (`role-permission.prisma`)
+*Role definitions & RBAC permission join table.*
+
+| Field | Type | Attributes | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `String` | `@id @default(uuid())` | Role UUID |
+| `name` | `String` | | Role name (e.g. `ADMIN`, `HR_MANAGER`) |
+| `isSystem` | `Boolean` | `@default(false)` | Flag for immutable system roles |
+| `organizationId` | `String?` | FK → `Organization` | Tenant scoping (null for global templates) |
+| `deletedAt` | `DateTime?` | | Soft delete timestamp |
+
+---
+
+### 4. Employee (`employee.prisma`)
+*Employment details, salary configurations, and codes.*
+
+| Field | Type | Attributes | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `String` | `@id @default(uuid())` | Employee UUID |
+| `organizationId` | `String` | FK → `Organization` | Tenant scoping key |
+| `userId` | `String` | `@unique`, FK → `User` | Linked User account |
+| `departmentId` | `String?` | FK → `Department` | Belonging Department |
+| `employeeCode` | `String` | | Auto code (`EMP-001`) |
+| `jobTitle` | `String` | | Designated job title |
+| `salaryType` | `SalaryType` | | `MONTHLY` or `HOURLY` |
+| `salary` | `Decimal?` | | Fixed monthly salary amount |
+| `hourlyRate` | `Decimal?` | | Hourly rate amount |
+| `joiningDate` | `DateTime` | | Formal hiring date |
+| `status` | `EmployeeStatus` | `@default(ACTIVE)` | Employment state |
+
+---
+
+### 5. Project (`project.prisma`) & Task (`task.prisma`)
+*Project management and employee task assignment.*
+
+| Field | Type | Attributes | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `String` | `@id @default(uuid())` | Task UUID |
+| `projectId` | `String` | FK → `Project` | Parent Project UUID |
+| `employeeId` | `String` | FK → `Employee` | Assigned Employee UUID |
+| `title` | `String` | | Task title |
+| `estimatedHours`| `Decimal?` | | Estimated completion hours |
+| `priority` | `TaskPriority` | `@default(MEDIUM)` | Task priority rating |
+| `status` | `TaskStatus` | `@default(TODO)` | Task progress state |
+| `dueDate` | `DateTime?` | | Deadline date |
+
+---
+
+### 6. WorkSubmission (`work-submission.prisma`)
+*Work logs submitted by employees for manager review.*
+
+| Field | Type | Attributes | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `String` | `@id @default(uuid())` | WorkSubmission UUID |
+| `taskId` | `String` | FK → `Task` | Target Task UUID |
+| `employeeId` | `String` | FK → `Employee` | Submitting Employee UUID |
+| `hoursWorked` | `Decimal` | | Number of hours spent |
+| `workDate` | `DateTime` | | Date when work occurred |
+| `status` | `SubmissionStatus` | `@default(PENDING)` | Review status |
+| `reviewedBy` | `String?` | | Reviewer User UUID |
+| `reviewNote` | `String?` | | Rejection feedback / note |
+
+---
+
+### 7. Payroll (`payroll.prisma`) & Payment (`payment.prisma`)
+*Calculated compensation and financial transactions.*
+
+| Field | Type | Attributes | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `String` | `@id @default(uuid())` | Payroll UUID |
+| `employeeId` | `String` | FK → `Employee` | Target Employee UUID |
+| `periodStart` | `DateTime` | | Pay period start date |
+| `periodEnd` | `DateTime` | | Pay period end date |
+| `grossAmount` | `Decimal` | | Calculated gross compensation |
+| `deductions` | `Decimal` | `@default(0)` | Statutory / custom deductions |
+| `netAmount` | `Decimal` | | Final payable amount (`gross - deductions`) |
+| `status` | `PayrollStatus` | `@default(DRAFT)` | Payroll processing state |
+
+---
+
+## 🗑️ Soft Delete & Retention Strategy
+
+To preserve historical audit records and payroll calculations, EmNex uses a **Soft Delete** strategy for core structural entities:
+
+| Model | Soft Delete Field | Impact on Queries |
+| :--- | :---: | :--- |
+| **Role** | `deletedAt` | Excluded from role assignment queries. System roles protected. |
+| **Department** | `deletedAt` | Excluded from lists. Assigned employees retain reference. |
+| **Project** | `deletedAt` | Soft-deleted; blocked if active tasks are attached. |
+| **Task** | `deletedAt` | Soft-deleted; blocked if submissions are linked. |
+
+> [!IMPORTANT]
+> Financial & Audit models (`WorkSubmission`, `Payroll`, `Payment`, `AuditLog`) **DO NOT** support soft deletion. They are permanent immutable system records.
+
+---
+
+[⬅️ Return to README.md](./README.md)
