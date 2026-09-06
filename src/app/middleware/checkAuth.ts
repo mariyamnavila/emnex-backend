@@ -1,13 +1,12 @@
 import type { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status";
-import type { JwtPayload } from "jsonwebtoken";
 import config from "../config";
 import { prisma } from "../lib/prisma";
 import { AppError } from "../utils/AppError";
 import { catchAsync } from "../utils/catchAsync";
 import { jwtUtils } from "../utils/jwt";
 
-export const auth = (...requiredRoles: string[]) => {
+export const auth = () => {
 	return catchAsync(async (req: Request, res: Response, next: NextFunction) => {
 		const token = req.cookies.accessToken
 			? req.cookies.accessToken
@@ -24,18 +23,11 @@ export const auth = (...requiredRoles: string[]) => {
 
 		const verifiedToken = jwtUtils.verifyToken(token, config.jwt_access_secret);
 
-		if (!verifiedToken.success) {
-			throw new AppError(httpStatus.UNAUTHORIZED, verifiedToken.error);
+		if (!verifiedToken.success || !verifiedToken.data) {
+			throw new AppError(httpStatus.UNAUTHORIZED, verifiedToken.error || "Invalid token");
 		}
 
-		const { userId, role } = verifiedToken.data as JwtPayload;
-
-		if (requiredRoles.length && !requiredRoles.includes(role)) {
-			throw new AppError(
-				httpStatus.FORBIDDEN,
-				"Forbidden. You don't have permission to access this resource.",
-			);
-		}
+		const { userId } = verifiedToken.data;
 
 		const user = await prisma.user.findUnique({
 			where: { id: userId },

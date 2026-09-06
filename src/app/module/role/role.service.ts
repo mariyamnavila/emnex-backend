@@ -340,6 +340,18 @@ const removePermission = async (
 		);
 	}
 
+	// Get user's current role to prevent removing own permissions
+	const currentUser = await prisma.user.findUnique({
+		where: { id: user.userId },
+	});
+
+	if (currentUser?.roleId === roleId) {
+		throw new AppError(
+			httpStatus.FORBIDDEN,
+			"Cannot remove permissions from your own role",
+		);
+	}
+
 	const rolePermission = await prisma.rolePermission.findUnique({
 		where: {
 			roleId_permissionId: { roleId, permissionId },

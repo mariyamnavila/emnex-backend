@@ -1,6 +1,10 @@
 import { prisma } from "../lib/prisma";
 
 const defaultPermissions = [
+	// Organization
+	"organization.view",
+	"organization.update",
+
 	// Employee
 	"employee.view",
 	"employee.create",
@@ -34,12 +38,14 @@ const defaultPermissions = [
 
 	// Payroll
 	"payroll.view",
+	"payroll.view_own",
 	"payroll.generate",
 	"payroll.approve",
 	"payroll.reject",
 
 	// Payment
 	"payment.view",
+	"payment.view_own",
 	"payment.create",
 	"payment.refund",
 
@@ -68,6 +74,7 @@ const systemRoleTemplates = [
 		name: "HR_MANAGER",
 		description: "Workforce management",
 		permissions: [
+			"organization.view",
 			"employee.view",
 			"employee.create",
 			"employee.update",
@@ -86,6 +93,7 @@ const systemRoleTemplates = [
 		name: "FINANCE_MANAGER",
 		description: "Financial operations",
 		permissions: [
+			"organization.view",
 			"employee.view",
 			"payroll.view",
 			"payroll.generate",
@@ -104,8 +112,8 @@ const systemRoleTemplates = [
 			"task.view",
 			"submission.view",
 			"submission.create",
-			"payroll.view",
-			"payment.view",
+			"payroll.view_own",
+			"payment.view_own",
 		],
 	},
 ];
