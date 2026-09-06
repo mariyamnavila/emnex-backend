@@ -42,7 +42,6 @@ const getAllAuditLogs = async (
 			where,
 			include: {
 				user: {
-					omit: { password: true },
 					select: {
 						id: true,
 						name: true,
@@ -76,7 +75,6 @@ const getAuditLogById = async (id: string, user: IRequestUser) => {
 		},
 		include: {
 			user: {
-				omit: { password: true },
 				select: {
 					id: true,
 					name: true,

@@ -2,6 +2,7 @@ import httpStatus from "http-status";
 import type { IRequestUser } from "../../interfaces";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/AppError";
+import { AuditAction, createAuditLog } from "../../utils/auditLog";
 import type {
 	IDepartmentCreatePayload,
 	IDepartmentUpdatePayload,
@@ -34,6 +35,14 @@ const createDepartment = async (
 			description,
 			organizationId: user.organizationId,
 		},
+	});
+
+	createAuditLog({
+		user,
+		action: AuditAction.CREATE_DEPARTMENT,
+		entity: "Department",
+		entityId: department.id,
+		metadata: { name },
 	});
 
 	return department;
@@ -134,6 +143,14 @@ const updateDepartment = async (
 		data: { name, description },
 	});
 
+	createAuditLog({
+		user,
+		action: AuditAction.UPDATE_DEPARTMENT,
+		entity: "Department",
+		entityId: id,
+		metadata: { name, description },
+	});
+
 	return updatedDepartment;
 };
 
@@ -166,6 +183,13 @@ const deleteDepartment = async (id: string, user: IRequestUser) => {
 	}
 
 	await prisma.department.delete({ where: { id } });
+
+	createAuditLog({
+		user,
+		action: AuditAction.DELETE_DEPARTMENT,
+		entity: "Department",
+		entityId: id,
+	});
 
 	return { message: "Department deleted successfully" };
 };

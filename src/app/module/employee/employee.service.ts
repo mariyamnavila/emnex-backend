@@ -6,6 +6,7 @@ import type { IRequestUser } from "../../interfaces";
 import { sendEmployeeWelcomeEmail } from "../../lib/email";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/AppError";
+import { AuditAction, createAuditLog } from "../../utils/auditLog";
 import type {
 	IEmployeeCreatePayload,
 	IEmployeeQueryParams,
@@ -120,6 +121,17 @@ const createEmployee = async (
 			include: {
 				user: { omit: { password: true } },
 				department: true,
+			},
+		});
+
+		await tx.auditLog.create({
+			data: {
+				userId: user.userId,
+				organizationId: user.organizationId,
+				action: AuditAction.CREATE_EMPLOYEE,
+				entity: "Employee",
+				entityId: employee.id,
+				metadata: { email, roleId, departmentId, jobTitle },
 			},
 		});
 
@@ -269,6 +281,14 @@ const updateEmployee = async (
 		},
 	});
 
+	createAuditLog({
+		user,
+		action: AuditAction.UPDATE_EMPLOYEE,
+		entity: "Employee",
+		entityId: id,
+		metadata: payload,
+	});
+
 	return updatedEmployee;
 };
 
@@ -292,6 +312,13 @@ const deleteEmployee = async (id: string, user: IRequestUser) => {
 	await prisma.employee.update({
 		where: { id },
 		data: { status: "TERMINATED" },
+	});
+
+	createAuditLog({
+		user,
+		action: AuditAction.DELETE_EMPLOYEE,
+		entity: "Employee",
+		entityId: id,
 	});
 
 	return { message: "Employee terminated successfully" };

@@ -2,6 +2,7 @@ import httpStatus from "http-status";
 import type { IRequestUser } from "../../interfaces";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/AppError";
+import { AuditAction, createAuditLog } from "../../utils/auditLog";
 import type {
 	IProjectCreatePayload,
 	IProjectQueryParams,
@@ -23,6 +24,14 @@ const createProject = async (
 			budget,
 			organizationId: user.organizationId,
 		},
+	});
+
+	createAuditLog({
+		user,
+		action: AuditAction.CREATE_PROJECT,
+		entity: "Project",
+		entityId: project.id,
+		metadata: { name },
 	});
 
 	return project;
@@ -145,6 +154,14 @@ const updateProject = async (
 		},
 	});
 
+	createAuditLog({
+		user,
+		action: AuditAction.UPDATE_PROJECT,
+		entity: "Project",
+		entityId: id,
+		metadata: { name, description, budget, status },
+	});
+
 	return updatedProject;
 };
 
@@ -177,6 +194,13 @@ const deleteProject = async (id: string, user: IRequestUser) => {
 	}
 
 	await prisma.project.delete({ where: { id } });
+
+	createAuditLog({
+		user,
+		action: AuditAction.DELETE_PROJECT,
+		entity: "Project",
+		entityId: id,
+	});
 
 	return { message: "Project deleted successfully" };
 };

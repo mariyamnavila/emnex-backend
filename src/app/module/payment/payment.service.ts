@@ -5,6 +5,7 @@ import type { IRequestUser } from "../../interfaces";
 import { prisma } from "../../lib/prisma";
 import { stripe } from "../../lib/stripe";
 import { AppError } from "../../utils/AppError";
+import { AuditAction, createAuditLog } from "../../utils/auditLog";
 import type {
 	IPaymentCreatePayload,
 	IPaymentQueryParams,
@@ -107,6 +108,14 @@ const createCheckoutSession = async (
 			},
 			payroll: true,
 		},
+	});
+
+	createAuditLog({
+		user,
+		action: AuditAction.PAYMENT_INITIATED,
+		entity: "Payment",
+		entityId: payment.id,
+		metadata: { payrollId, amount: payroll.netAmount, currency },
 	});
 
 	return {

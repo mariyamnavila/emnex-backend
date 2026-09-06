@@ -2,6 +2,7 @@ import httpStatus from "http-status";
 import type { IRequestUser } from "../../interfaces";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/AppError";
+import { AuditAction, createAuditLog } from "../../utils/auditLog";
 import type {
 	IPayrollGeneratePayload,
 	IPayrollQueryParams,
@@ -107,6 +108,14 @@ const generatePayroll = async (
 				},
 			},
 		},
+	});
+
+	createAuditLog({
+		user,
+		action: AuditAction.GENERATE_PAYROLL,
+		entity: "Payroll",
+		entityId: payroll.id,
+		metadata: { employeeId, grossAmount, netAmount, deductions },
 	});
 
 	return formatPayroll(payroll);
@@ -248,6 +257,14 @@ const approvePayroll = async (id: string, user: IRequestUser) => {
 		},
 	});
 
+	createAuditLog({
+		user,
+		action: AuditAction.APPROVE_PAYROLL,
+		entity: "Payroll",
+		entityId: id,
+		metadata: { employeeId: payroll.employeeId, netAmount: payroll.netAmount },
+	});
+
 	return formatPayroll(updatedPayroll);
 };
 
@@ -287,6 +304,14 @@ const rejectPayroll = async (
 				},
 			},
 		},
+	});
+
+	createAuditLog({
+		user,
+		action: AuditAction.REJECT_PAYROLL,
+		entity: "Payroll",
+		entityId: id,
+		metadata: { employeeId: payroll.employeeId, netAmount: payroll.netAmount },
 	});
 
 	return formatPayroll(updatedPayroll);

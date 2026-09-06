@@ -2,6 +2,7 @@ import httpStatus from "http-status";
 import type { IRequestUser } from "../../interfaces";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/AppError";
+import { AuditAction, createAuditLog } from "../../utils/auditLog";
 import { validateEmployeeCanAssign, validateEmployeeCanViewTasks } from "../../utils/employeeStatus";
 import type {
 	ITaskAssignPayload,
@@ -72,6 +73,14 @@ const createTask = async (payload: ITaskCreatePayload, user: IRequestUser) => {
 				},
 			},
 		},
+	});
+
+	createAuditLog({
+		user,
+		action: AuditAction.CREATE_TASK,
+		entity: "Task",
+		entityId: task.id,
+		metadata: { title, employeeId, projectId },
 	});
 
 	return task;
@@ -256,6 +265,14 @@ const deleteTask = async (id: string, user: IRequestUser) => {
 
 	await prisma.task.delete({ where: { id } });
 
+	createAuditLog({
+		user,
+		action: AuditAction.DELETE_TASK,
+		entity: "Task",
+		entityId: id,
+		metadata: { title: task.title },
+	});
+
 	return { message: "Task deleted successfully" };
 };
 
@@ -308,6 +325,14 @@ const assignTask = async (
 				},
 			},
 		},
+	});
+
+	createAuditLog({
+		user,
+		action: AuditAction.ASSIGN_TASK,
+		entity: "Task",
+		entityId: id,
+		metadata: { employeeId: payload.employeeId },
 	});
 
 	return updatedTask;
@@ -365,6 +390,14 @@ const updateTaskStatus = async (
 				},
 			},
 		},
+	});
+
+	createAuditLog({
+		user,
+		action: AuditAction.CHANGE_TASK_STATUS,
+		entity: "Task",
+		entityId: id,
+		metadata: { from: task.status, to: status },
 	});
 
 	return updatedTask;

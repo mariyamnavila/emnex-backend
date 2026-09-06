@@ -2,6 +2,7 @@ import httpStatus from "http-status";
 import type { IRequestUser } from "../../interfaces";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/AppError";
+import { AuditAction, createAuditLog } from "../../utils/auditLog";
 import {
 	validateEmployeeCanViewSubmissions,
 	validateEmployeeCanWork,
@@ -73,6 +74,14 @@ const createSubmission = async (
 				},
 			},
 		},
+	});
+
+	createAuditLog({
+		user,
+		action: AuditAction.SUBMIT_WORK,
+		entity: "WorkSubmission",
+		entityId: submission.id,
+		metadata: { taskId, employeeId: employee.id, hoursWorked },
 	});
 
 	return submission;
@@ -280,6 +289,17 @@ const approveSubmission = async (id: string, user: IRequestUser) => {
 			data: { status: "SUBMITTED" },
 		});
 
+		await tx.auditLog.create({
+			data: {
+				userId: user.userId,
+				organizationId: user.organizationId,
+				action: AuditAction.APPROVE_WORK,
+				entity: "WorkSubmission",
+				entityId: id,
+				metadata: { taskId: submission.taskId, employeeId: submission.employeeId },
+			},
+		});
+
 		return updatedSubmission;
 	});
 
@@ -343,6 +363,17 @@ const rejectSubmission = async (
 		await tx.task.update({
 			where: { id: submission.taskId },
 			data: { status: "REJECTED" },
+		});
+
+		await tx.auditLog.create({
+			data: {
+				userId: user.userId,
+				organizationId: user.organizationId,
+				action: AuditAction.REJECT_WORK,
+				entity: "WorkSubmission",
+				entityId: id,
+				metadata: { taskId: submission.taskId, employeeId: submission.employeeId, reason },
+			},
 		});
 
 		return updatedSubmission;

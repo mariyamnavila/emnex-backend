@@ -2,6 +2,7 @@ import httpStatus from "http-status";
 import type { IRequestUser } from "../../interfaces";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/AppError";
+import { AuditAction, createAuditLog } from "../../utils/auditLog";
 import type {
 	IPermissionAssignPayload,
 	IRoleCreatePayload,
@@ -31,6 +32,14 @@ const createRole = async (payload: IRoleCreatePayload, user: IRequestUser) => {
 			description: description,
 			organizationId: user.organizationId,
 		},
+	});
+
+	createAuditLog({
+		user,
+		action: AuditAction.CREATE_ROLE,
+		entity: "Role",
+		entityId: role.id,
+		metadata: { name },
 	});
 
 	return role;
@@ -134,6 +143,14 @@ const updateRole = async (
 		data: { name, description },
 	});
 
+	createAuditLog({
+		user,
+		action: AuditAction.UPDATE_ROLE,
+		entity: "Role",
+		entityId: id,
+		metadata: { name, description },
+	});
+
 	return updatedRole;
 };
 
@@ -170,6 +187,13 @@ const deleteRole = async (id: string, user: IRequestUser) => {
 	}
 
 	await prisma.role.delete({ where: { id } });
+
+	createAuditLog({
+		user,
+		action: AuditAction.DELETE_ROLE,
+		entity: "Role",
+		entityId: id,
+	});
 
 	return { message: "Role deleted successfully" };
 };
@@ -260,6 +284,17 @@ const assignPermissions = async (
 				permissionId,
 			})),
 			skipDuplicates: true,
+		});
+
+		await tx.auditLog.create({
+			data: {
+				userId: user.userId,
+				organizationId: user.organizationId,
+				action: AuditAction.ASSIGN_PERMISSIONS,
+				entity: "Role",
+				entityId: roleId,
+				metadata: { permissionIds },
+			},
 		});
 	});
 

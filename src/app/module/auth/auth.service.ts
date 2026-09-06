@@ -6,6 +6,7 @@ import { cloudinary } from "../../lib/cloudinary";
 import { googleClient } from "../../lib/googleAuth";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/AppError";
+import { AuditAction, createAuditLog } from "../../utils/auditLog";
 import { jwtUtils } from "../../utils/jwt";
 import type {
 	IGoogleLoginPayload,
@@ -183,6 +184,13 @@ const loginUser = async (payload: ILoginPayload) => {
 	const isPasswordValid = await bcrypt.compare(password, user.password);
 
 	if (!isPasswordValid) {
+		createAuditLog({
+			user: { userId: user.id, organizationId: user.organizationId },
+			action: AuditAction.LOGIN_FAILED,
+			entity: "User",
+			entityId: user.id,
+			metadata: { email },
+		});
 		throw new AppError(httpStatus.UNAUTHORIZED, "Invalid credentials");
 	}
 
@@ -205,6 +213,14 @@ const loginUser = async (payload: ILoginPayload) => {
 		config.jwt_refresh_secret,
 		config.jwt_refresh_expires_in as SignOptions,
 	);
+
+	createAuditLog({
+		user: { userId: user.id, organizationId: user.organizationId },
+		action: AuditAction.LOGIN,
+		entity: "User",
+		entityId: user.id,
+		metadata: { email },
+	});
 
 	return {
 		accessToken,
@@ -319,6 +335,13 @@ const changePassword = async (
 			password: hashedNewPassword,
 			mustChangePassword: false,
 		},
+	});
+
+	createAuditLog({
+		user,
+		action: AuditAction.PASSWORD_CHANGED,
+		entity: "User",
+		entityId: user.userId,
 	});
 
 	return { message: "Password changed successfully" };
@@ -442,6 +465,14 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
 		config.jwt_refresh_secret,
 		config.jwt_refresh_expires_in as SignOptions,
 	);
+
+	createAuditLog({
+		user: { userId: user.id, organizationId: user.organizationId },
+		action: AuditAction.GOOGLE_LOGIN,
+		entity: "User",
+		entityId: user.id,
+		metadata: { email },
+	});
 
 	return {
 		accessToken,
