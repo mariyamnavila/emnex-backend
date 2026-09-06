@@ -5,6 +5,8 @@ import express, {
 	type Request,
 	type Response,
 } from "express";
+import rateLimit from "express-rate-limit";
+import helmet from "helmet";
 import httpStatus from "http-status";
 import config from "./app/config";
 import { globalErrorHandler } from "./app/middleware/globalErrorHandler";
@@ -24,6 +26,24 @@ import { TaskRoutes } from "./app/module/task/task.route";
 
 const app: Application = express();
 
+// Security headers
+app.use(helmet());
+
+// Rate limiting
+const limiter = rateLimit({
+	windowMs: 15 * 60 * 1000,
+	max: 100,
+	message: "Too many requests from this IP, please try again after 15 minutes",
+});
+app.use("/api", limiter);
+
+// Stricter rate limit for auth routes
+const authLimiter = rateLimit({
+	windowMs: 15 * 60 * 1000,
+	max: 20,
+	message: "Too many authentication attempts, please try again after 15 minutes",
+});
+
 app.use(
 	cors({
 		origin: config.frontend_url,
@@ -38,7 +58,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // Routes
-app.use("/api/v1/auth", AuthRoutes);
+app.use("/api/v1/auth", authLimiter, AuthRoutes);
 app.use("/api/v1/organizations", OrganizationRoutes);
 app.use("/api/v1/roles", RoleRoutes);
 app.use("/api/v1/departments", DepartmentRoutes);
