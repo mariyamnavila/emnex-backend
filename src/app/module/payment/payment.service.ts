@@ -10,6 +10,18 @@ import type {
 	IPaymentQueryParams,
 } from "./payment.interface";
 
+const toNumber = (value: unknown): number => {
+	if (typeof value === "object" && value !== null && "toString" in value) {
+		return Number(value.toString());
+	}
+	return Number(value);
+};
+
+const formatPayment = (payment: any) => ({
+	...payment,
+	amount: toNumber(payment.amount),
+});
+
 const createCheckoutSession = async (
 	payload: IPaymentCreatePayload,
 	user: IRequestUser,
@@ -232,7 +244,7 @@ const getAllPayments = async (
 	]);
 
 	return {
-		payments,
+		payments: payments.map(formatPayment),
 		meta: {
 			page,
 			limit,
@@ -260,7 +272,7 @@ const getPaymentById = async (id: string, user: IRequestUser) => {
 		throw new AppError(httpStatus.NOT_FOUND, "Payment not found");
 	}
 
-	return payment;
+	return formatPayment(payment);
 };
 
 const getMyPayments = async (user: IRequestUser) => {
@@ -283,7 +295,7 @@ const getMyPayments = async (user: IRequestUser) => {
 		orderBy: { createdAt: "desc" },
 	});
 
-	return payments;
+	return payments.map(formatPayment);
 };
 
 export const PaymentService = {

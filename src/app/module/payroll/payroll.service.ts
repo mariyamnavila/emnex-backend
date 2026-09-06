@@ -7,6 +7,20 @@ import type {
 	IPayrollQueryParams,
 } from "./payroll.interface";
 
+const toNumber = (value: unknown): number => {
+	if (typeof value === "object" && value !== null && "toString" in value) {
+		return Number(value.toString());
+	}
+	return Number(value);
+};
+
+const formatPayroll = (payroll: any) => ({
+	...payroll,
+	grossAmount: toNumber(payroll.grossAmount),
+	deductions: toNumber(payroll.deductions),
+	netAmount: toNumber(payroll.netAmount),
+});
+
 const generatePayroll = async (
 	payload: IPayrollGeneratePayload,
 	user: IRequestUser,
@@ -95,7 +109,7 @@ const generatePayroll = async (
 		},
 	});
 
-	return payroll;
+	return formatPayroll(payroll);
 };
 
 const getAllPayrolls = async (
@@ -139,7 +153,7 @@ const getAllPayrolls = async (
 	]);
 
 	return {
-		payrolls,
+		payrolls: payrolls.map(formatPayroll),
 		pagination: {
 			page,
 			limit,
@@ -173,7 +187,7 @@ const getPayrollById = async (id: string, user: IRequestUser) => {
 		);
 	}
 
-	return payroll;
+	return formatPayroll(payroll);
 };
 
 const getMyPayrolls = async (user: IRequestUser) => {
@@ -196,7 +210,7 @@ const getMyPayrolls = async (user: IRequestUser) => {
 		orderBy: { createdAt: "desc" },
 	});
 
-	return payrolls;
+	return payrolls.map(formatPayroll);
 };
 
 const approvePayroll = async (id: string, user: IRequestUser) => {
@@ -234,7 +248,7 @@ const approvePayroll = async (id: string, user: IRequestUser) => {
 		},
 	});
 
-	return updatedPayroll;
+	return formatPayroll(updatedPayroll);
 };
 
 const rejectPayroll = async (
@@ -275,7 +289,7 @@ const rejectPayroll = async (
 		},
 	});
 
-	return updatedPayroll;
+	return formatPayroll(updatedPayroll);
 };
 
 const getPayrollSummary = async (user: IRequestUser) => {
@@ -301,10 +315,14 @@ const getPayrollSummary = async (user: IRequestUser) => {
 
 	return {
 		totalPayrolls: summary._count,
-		totalGross: summary._sum.grossAmount,
-		totalDeductions: summary._sum.deductions,
-		totalNet: summary._sum.netAmount,
-		byStatus: statusCounts,
+		totalGross: toNumber(summary._sum.grossAmount),
+		totalDeductions: toNumber(summary._sum.deductions),
+		totalNet: toNumber(summary._sum.netAmount),
+		byStatus: statusCounts.map((s) => ({
+			...s,
+			totalGross: toNumber(s._sum.grossAmount),
+			totalNet: toNumber(s._sum.netAmount),
+		})),
 	};
 };
 
