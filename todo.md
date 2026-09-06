@@ -207,6 +207,16 @@ This file is excluded from git commits and serves as a shared checklist to track
 
 ---
 
+## Optional (If Time Permits)
+
+- [ ] Multi-organization support (Membership model — user can belong to multiple orgs)
+- [ ] Multi-employee per task assignment (currently: one employee per task)
+- [ ] bkash / SSLCOMMERZ payment gateway integration
+- [ ] AI-powered payroll generation (auto-calculate from approved submissions)
+- [ ] PDF generation for payslips
+
+---
+
 ## Notes & Guidelines
 1. **Preserve Coding Style**: Follow the style established in `PH-Healthcare-Backend` (Modular file layout, route-controller-service separation, catchAsync, sendResponse, AppError patterns).
 2. **Prisma Client**: Generated at `generated/prisma` to avoid polluting default imports.

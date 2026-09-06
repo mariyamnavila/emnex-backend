@@ -9,6 +9,7 @@ import httpStatus from "http-status";
 import config from "./app/config";
 import { globalErrorHandler } from "./app/middleware/globalErrorHandler";
 import { notFound } from "./app/middleware/notFound";
+import { AnalyticsRoutes } from "./app/module/analytics/analytics.route";
 import { AuthRoutes } from "./app/module/auth/auth.route";
 import { DepartmentRoutes } from "./app/module/department/department.route";
 import { EmployeeRoutes } from "./app/module/employee/employee.route";
@@ -46,6 +47,7 @@ app.use("/api/v1/tasks", TaskRoutes);
 app.use("/api/v1/submissions", SubmissionRoutes);
 app.use("/api/v1/payroll", PayrollRoutes);
 app.use("/api/v1/payments", PaymentRoutes);
+app.use("/api/v1/analytics", AnalyticsRoutes);
 
 app.get("/", async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json({
