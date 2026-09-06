@@ -102,7 +102,9 @@ const getAllPayrolls = async (
 	user: IRequestUser,
 	query: IPayrollQueryParams,
 ) => {
-	const { page = 1, limit = 10, status, employeeId } = query;
+	const page = Number(query.page) || 1;
+	const limit = Number(query.limit) || 10;
+	const { status, employeeId } = query;
 
 	const where: Record<string, unknown> = {
 		organizationId: user.organizationId,

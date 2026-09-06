@@ -20,6 +20,7 @@ export default {
 	redis_port: process.env.REDIS_PORT!,
 	stripe_secret_key: process.env.STRIPE_SECRET_KEY!,
 	stripe_webhook_secret: process.env.STRIPE_WEBHOOK_SECRET!,
+	app_url: process.env.APP_URL || "http://localhost:5000",
 	cloudinary_cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
 	cloudinary_api_key: process.env.CLOUDINARY_API_KEY!,
 	cloudinary_api_secret: process.env.CLOUDINARY_API_SECRET!,

@@ -9,6 +9,7 @@ export const globalErrorHandler = async (
 	res: Response,
 	_next: NextFunction,
 ) => {
+	console.error("Error:", err);
 	let statusCode: number = httpStatus.INTERNAL_SERVER_ERROR;
 	let errorMessage = err.message || "Internal Server Error";
 
