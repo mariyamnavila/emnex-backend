@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status";
 import type { IRequestUser } from "../../interfaces";
+import { AppError } from "../../utils/AppError";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import { PaymentService } from "./payment.service";
@@ -25,7 +26,10 @@ const handleWebhook = catchAsync(
 		const rawBody = req.body;
 
 		if (!signature) {
-			throw new Error("Missing stripe-signature header.");
+			throw new AppError(
+				httpStatus.BAD_REQUEST,
+				"Missing stripe-signature header.",
+			);
 		}
 
 		const result = await PaymentService.handleWebhook(

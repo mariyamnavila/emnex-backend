@@ -16,12 +16,27 @@ router.post(
 	RoleController.createRole,
 );
 
-router.get("/", auth(), checkPermission("role.view"), RoleController.getAllRoles);
+router.get(
+	"/",
+	auth(),
+	checkPermission("role.view"),
+	RoleController.getAllRoles,
+);
 
 // Permission management (must be before /:id)
-router.get("/permissions/all", auth(), checkPermission("permission.view"), RoleController.getAllPermissions);
+router.get(
+	"/permissions/all",
+	auth(),
+	checkPermission("permission.view"),
+	RoleController.getAllPermissions,
+);
 
-router.get("/:id", auth(), checkPermission("role.view"), RoleController.getRoleById);
+router.get(
+	"/:id",
+	auth(),
+	checkPermission("role.view"),
+	RoleController.getRoleById,
+);
 
 router.patch(
 	"/:id",
@@ -31,9 +46,19 @@ router.patch(
 	RoleController.updateRole,
 );
 
-router.delete("/:id", auth(), checkPermission("role.delete"), RoleController.deleteRole);
+router.delete(
+	"/:id",
+	auth(),
+	checkPermission("role.delete"),
+	RoleController.deleteRole,
+);
 
-router.get("/:roleId/permissions", auth(), checkPermission("permission.view"), RoleController.getRolePermissions);
+router.get(
+	"/:roleId/permissions",
+	auth(),
+	checkPermission("permission.view"),
+	RoleController.getRolePermissions,
+);
 
 router.post(
 	"/:roleId/permissions",

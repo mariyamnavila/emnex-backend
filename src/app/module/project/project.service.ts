@@ -15,6 +15,13 @@ const createProject = async (
 ) => {
 	const { name, description, startDate, endDate, budget } = payload;
 
+	if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			"Start date cannot be after end date",
+		);
+	}
+
 	const project = await prisma.project.create({
 		data: {
 			name,
@@ -107,7 +114,7 @@ const getProjectById = async (id: string, user: IRequestUser) => {
 		},
 	});
 
-	if (!project) {
+	if (!project || project.deletedAt) {
 		throw new AppError(httpStatus.NOT_FOUND, "Project not found");
 	}
 
@@ -137,16 +144,29 @@ const updateProject = async (
 	}
 
 	if (project.deletedAt) {
-		throw new AppError(
-			httpStatus.BAD_REQUEST,
-			"Cannot modify deleted project",
-		);
+		throw new AppError(httpStatus.BAD_REQUEST, "Cannot modify deleted project");
 	}
 
 	if (project.organizationId !== user.organizationId) {
 		throw new AppError(
 			httpStatus.FORBIDDEN,
 			"You can only update projects in your organization",
+		);
+	}
+
+	const effectiveStartDate = startDate
+		? new Date(startDate)
+		: project.startDate;
+	const effectiveEndDate = endDate ? new Date(endDate) : project.endDate;
+
+	if (
+		effectiveStartDate &&
+		effectiveEndDate &&
+		effectiveStartDate > effectiveEndDate
+	) {
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			"Start date cannot be after end date",
 		);
 	}
 

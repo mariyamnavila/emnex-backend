@@ -87,7 +87,7 @@ const getDepartmentById = async (id: string, user: IRequestUser) => {
 		},
 	});
 
-	if (!department) {
+	if (!department || department.deletedAt) {
 		throw new AppError(httpStatus.NOT_FOUND, "Department not found");
 	}
 

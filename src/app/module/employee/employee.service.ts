@@ -37,7 +37,17 @@ const createEmployee = async (
 	payload: IEmployeeCreatePayload,
 	user: IRequestUser,
 ) => {
-	const { name, email, roleId, departmentId, jobTitle, salaryType, salary, hourlyRate, joiningDate } = payload;
+	const {
+		name,
+		email,
+		roleId,
+		departmentId,
+		jobTitle,
+		salaryType,
+		salary,
+		hourlyRate,
+		joiningDate,
+	} = payload;
 
 	// Check if email already exists
 	const existingUser = await prisma.user.findUnique({
@@ -51,11 +61,12 @@ const createEmployee = async (
 		);
 	}
 
-	// Verify role exists in this organization
+	// Verify role exists in this organization and is not deleted
 	const role = await prisma.role.findFirst({
 		where: {
 			id: roleId,
 			organizationId: user.organizationId,
+			deletedAt: null,
 		},
 	});
 
@@ -253,7 +264,9 @@ const getEmployeeById = async (id: string, user: IRequestUser) => {
 };
 
 const isNegativeStatus = (status?: string) => {
-	return status === "TERMINATED" || status === "SUSPENDED" || status === "INACTIVE";
+	return (
+		status === "TERMINATED" || status === "SUSPENDED" || status === "INACTIVE"
+	);
 };
 
 const updateEmployee = async (
@@ -299,6 +312,23 @@ const updateEmployee = async (
 			httpStatus.FORBIDDEN,
 			"Cannot change the admin's status to a negative state",
 		);
+	}
+
+	if (payload.departmentId) {
+		const department = await prisma.department.findFirst({
+			where: {
+				id: payload.departmentId,
+				organizationId: user.organizationId,
+				deletedAt: null,
+			},
+		});
+
+		if (!department) {
+			throw new AppError(
+				httpStatus.NOT_FOUND,
+				"Department not found in this organization",
+			);
+		}
 	}
 
 	const updatedEmployee = await prisma.employee.update({

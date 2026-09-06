@@ -15,9 +15,19 @@ router.post(
 	DepartmentController.createDepartment,
 );
 
-router.get("/", auth(), checkPermission("department.view"), DepartmentController.getAllDepartments);
+router.get(
+	"/",
+	auth(),
+	checkPermission("department.view"),
+	DepartmentController.getAllDepartments,
+);
 
-router.get("/:id", auth(), checkPermission("department.view"), DepartmentController.getDepartmentById);
+router.get(
+	"/:id",
+	auth(),
+	checkPermission("department.view"),
+	DepartmentController.getDepartmentById,
+);
 
 router.patch(
 	"/:id",
@@ -27,8 +37,18 @@ router.patch(
 	DepartmentController.updateDepartment,
 );
 
-router.delete("/:id", auth(), checkPermission("department.delete"), DepartmentController.deleteDepartment);
+router.delete(
+	"/:id",
+	auth(),
+	checkPermission("department.delete"),
+	DepartmentController.deleteDepartment,
+);
 
-router.get("/:id/employees", auth(), checkPermission("department.view"), DepartmentController.getDepartmentEmployees);
+router.get(
+	"/:id/employees",
+	auth(),
+	checkPermission("department.view"),
+	DepartmentController.getDepartmentEmployees,
+);
 
 export const DepartmentRoutes = router;

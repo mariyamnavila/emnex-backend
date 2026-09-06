@@ -38,8 +38,22 @@ const generatePayroll = async (
 		include: { user: true },
 	});
 
+	if (new Date(periodStart) >= new Date(periodEnd)) {
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			"Period start date must be before period end date",
+		);
+	}
+
 	if (!employee) {
 		throw new AppError(httpStatus.NOT_FOUND, "Employee not found");
+	}
+
+	if (employee.status === "TERMINATED") {
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			"Cannot generate payroll for a terminated employee",
+		);
 	}
 
 	// Prevent self-generation

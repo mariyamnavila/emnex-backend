@@ -7,7 +7,12 @@ import { SubmissionValidation } from "./submission.validation";
 
 const router = Router();
 
-router.get("/my", auth(), checkPermission("submission.view"), SubmissionController.getMySubmissions);
+router.get(
+	"/my",
+	auth(),
+	checkPermission("submission.view"),
+	SubmissionController.getMySubmissions,
+);
 
 router.post(
 	"/",
@@ -17,9 +22,19 @@ router.post(
 	SubmissionController.createSubmission,
 );
 
-router.get("/", auth(), checkPermission("submission.view"), SubmissionController.getAllSubmissions);
+router.get(
+	"/",
+	auth(),
+	checkPermission("submission.view"),
+	SubmissionController.getAllSubmissions,
+);
 
-router.get("/:id", auth(), checkPermission("submission.view"), SubmissionController.getSubmissionById);
+router.get(
+	"/:id",
+	auth(),
+	checkPermission("submission.view"),
+	SubmissionController.getSubmissionById,
+);
 
 router.patch(
 	"/:id",

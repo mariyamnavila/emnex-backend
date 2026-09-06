@@ -15,9 +15,19 @@ router.post(
 	ProjectController.createProject,
 );
 
-router.get("/", auth(), checkPermission("project.view"), ProjectController.getAllProjects);
+router.get(
+	"/",
+	auth(),
+	checkPermission("project.view"),
+	ProjectController.getAllProjects,
+);
 
-router.get("/:id", auth(), checkPermission("project.view"), ProjectController.getProjectById);
+router.get(
+	"/:id",
+	auth(),
+	checkPermission("project.view"),
+	ProjectController.getProjectById,
+);
 
 router.patch(
 	"/:id",
@@ -27,10 +37,25 @@ router.patch(
 	ProjectController.updateProject,
 );
 
-router.delete("/:id", auth(), checkPermission("project.delete"), ProjectController.deleteProject);
+router.delete(
+	"/:id",
+	auth(),
+	checkPermission("project.delete"),
+	ProjectController.deleteProject,
+);
 
-router.get("/:id/tasks", auth(), checkPermission("project.view", "task.view"), ProjectController.getProjectTasks);
+router.get(
+	"/:id/tasks",
+	auth(),
+	checkPermission("project.view", "task.view"),
+	ProjectController.getProjectTasks,
+);
 
-router.get("/:id/stats", auth(), checkPermission("project.view"), ProjectController.getProjectStats);
+router.get(
+	"/:id/stats",
+	auth(),
+	checkPermission("project.view"),
+	ProjectController.getProjectStats,
+);
 
 export const ProjectRoutes = router;

@@ -43,8 +43,25 @@ const createSubmission = async (
 		include: { project: true },
 	});
 
-	if (!task) {
+	if (!task || task.deletedAt || task.project.deletedAt) {
 		throw new AppError(httpStatus.NOT_FOUND, "Task not found");
+	}
+
+	if (task.status === "COMPLETED") {
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			"Cannot submit work for a completed task",
+		);
+	}
+
+	if (
+		task.project.status === "COMPLETED" ||
+		task.project.status === "CANCELLED"
+	) {
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			`Cannot submit work for a ${task.project.status.toLowerCase()} project`,
+		);
 	}
 
 	if (task.project.organizationId !== user.organizationId) {
@@ -308,7 +325,10 @@ const approveSubmission = async (id: string, user: IRequestUser) => {
 				action: AuditAction.APPROVE_WORK,
 				entity: "WorkSubmission",
 				entityId: id,
-				metadata: { taskId: submission.taskId, employeeId: submission.employeeId },
+				metadata: {
+					taskId: submission.taskId,
+					employeeId: submission.employeeId,
+				},
 			},
 		});
 
@@ -384,7 +404,11 @@ const rejectSubmission = async (
 				action: AuditAction.REJECT_WORK,
 				entity: "WorkSubmission",
 				entityId: id,
-				metadata: { taskId: submission.taskId, employeeId: submission.employeeId, reason },
+				metadata: {
+					taskId: submission.taskId,
+					employeeId: submission.employeeId,
+					reason,
+				},
 			},
 		});
 

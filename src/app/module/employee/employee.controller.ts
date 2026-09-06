@@ -20,7 +20,8 @@ const createEmployee = catchAsync(async (req: Request, res: Response) => {
 
 const getAllEmployees = catchAsync(async (req: Request, res: Response) => {
 	const user = req.user as IRequestUser;
-	const { page, limit, search, departmentId, status, sortBy, sortOrder } = req.query;
+	const { page, limit, search, departmentId, status, sortBy, sortOrder } =
+		req.query;
 
 	const result = await EmployeeService.getAllEmployees(user, {
 		page: page ? Number(page) : undefined,

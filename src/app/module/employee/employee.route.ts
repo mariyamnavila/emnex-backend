@@ -15,9 +15,19 @@ router.post(
 	EmployeeController.createEmployee,
 );
 
-router.get("/", auth(), checkPermission("employee.view"), EmployeeController.getAllEmployees);
+router.get(
+	"/",
+	auth(),
+	checkPermission("employee.view"),
+	EmployeeController.getAllEmployees,
+);
 
-router.get("/:id", auth(), checkPermission("employee.view"), EmployeeController.getEmployeeById);
+router.get(
+	"/:id",
+	auth(),
+	checkPermission("employee.view"),
+	EmployeeController.getEmployeeById,
+);
 
 router.patch(
 	"/:id",
@@ -27,10 +37,25 @@ router.patch(
 	EmployeeController.updateEmployee,
 );
 
-router.delete("/:id", auth(), checkPermission("employee.delete"), EmployeeController.deleteEmployee);
+router.delete(
+	"/:id",
+	auth(),
+	checkPermission("employee.delete"),
+	EmployeeController.deleteEmployee,
+);
 
-router.get("/:id/stats", auth(), checkPermission("employee.view"), EmployeeController.getEmployeeStats);
+router.get(
+	"/:id/stats",
+	auth(),
+	checkPermission("employee.view"),
+	EmployeeController.getEmployeeStats,
+);
 
-router.post("/:id/resend-credentials", auth(), checkPermission("employee.create"), EmployeeController.resendCredentials);
+router.post(
+	"/:id/resend-credentials",
+	auth(),
+	checkPermission("employee.create"),
+	EmployeeController.resendCredentials,
+);
 
 export const EmployeeRoutes = router;

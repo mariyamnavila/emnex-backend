@@ -9,7 +9,12 @@ const router = Router();
 
 router.post("/webhook", PaymentController.handleWebhook);
 
-router.get("/my", auth(), checkPermission("payment.view_own"), PaymentController.getMyPayments);
+router.get(
+	"/my",
+	auth(),
+	checkPermission("payment.view_own"),
+	PaymentController.getMyPayments,
+);
 
 router.post(
 	"/",
@@ -19,8 +24,18 @@ router.post(
 	PaymentController.createCheckoutSession,
 );
 
-router.get("/", auth(), checkPermission("payment.view"), PaymentController.getAllPayments);
+router.get(
+	"/",
+	auth(),
+	checkPermission("payment.view"),
+	PaymentController.getAllPayments,
+);
 
-router.get("/:id", auth(), checkPermission("payment.view"), PaymentController.getPaymentById);
+router.get(
+	"/:id",
+	auth(),
+	checkPermission("payment.view"),
+	PaymentController.getPaymentById,
+);
 
 export const PaymentRoutes = router;

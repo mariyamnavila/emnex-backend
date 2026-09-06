@@ -9,7 +9,12 @@ const router = Router();
 
 router.get("/me", auth(), OrganizationController.getMyOrganization);
 
-router.get("/:id", auth(), checkPermission("organization.view"), OrganizationController.getOrganizationById);
+router.get(
+	"/:id",
+	auth(),
+	checkPermission("organization.view"),
+	OrganizationController.getOrganizationById,
+);
 
 router.patch(
 	"/:id",
@@ -19,6 +24,11 @@ router.patch(
 	OrganizationController.updateOrganization,
 );
 
-router.get("/:id/stats", auth(), checkPermission("organization.view"), OrganizationController.getOrganizationStats);
+router.get(
+	"/:id/stats",
+	auth(),
+	checkPermission("organization.view"),
+	OrganizationController.getOrganizationStats,
+);
 
 export const OrganizationRoutes = router;

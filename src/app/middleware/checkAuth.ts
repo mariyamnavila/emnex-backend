@@ -24,7 +24,10 @@ export const auth = () => {
 		const verifiedToken = jwtUtils.verifyToken(token, config.jwt_access_secret);
 
 		if (!verifiedToken.success || !verifiedToken.data) {
-			throw new AppError(httpStatus.UNAUTHORIZED, verifiedToken.error || "Invalid token");
+			throw new AppError(
+				httpStatus.UNAUTHORIZED,
+				verifiedToken.error || "Invalid token",
+			);
 		}
 
 		const { userId } = verifiedToken.data;
@@ -74,9 +77,16 @@ export const auth = () => {
 			);
 		}
 
-		const permissions = user.role?.permissions?.map(
-			(rp) => rp.permission.name,
-		) ?? [];
+		// Check if assigned role has been soft deleted
+		if (user.role?.deletedAt) {
+			throw new AppError(
+				httpStatus.FORBIDDEN,
+				"Your assigned role has been deleted. Please contact support.",
+			);
+		}
+
+		const permissions =
+			user.role?.permissions?.map((rp) => rp.permission.name) ?? [];
 
 		req.user = {
 			email: user.email,

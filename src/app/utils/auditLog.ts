@@ -1,4 +1,4 @@
-import { InputJsonValue } from "@prisma/client/runtime/client";
+import type { InputJsonValue } from "@prisma/client/runtime/client";
 import { prisma } from "../lib/prisma";
 
 export const AuditAction = {

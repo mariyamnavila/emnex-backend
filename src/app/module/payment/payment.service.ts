@@ -1,5 +1,5 @@
 import httpStatus from "http-status";
-import Stripe from "stripe";
+import type Stripe from "stripe";
 import config from "../../config";
 import type { IRequestUser } from "../../interfaces";
 import { prisma } from "../../lib/prisma";
@@ -213,7 +213,11 @@ const handleWebhook = async (rawBody: string | Buffer, signature: string) => {
 			where: { transactionId: paymentIntent.id },
 		});
 
-		if (payment && payment.status !== "FAILED" && payment.status !== "COMPLETED") {
+		if (
+			payment &&
+			payment.status !== "FAILED" &&
+			payment.status !== "COMPLETED"
+		) {
 			await prisma.payment.update({
 				where: { id: payment.id },
 				data: { status: "FAILED" },

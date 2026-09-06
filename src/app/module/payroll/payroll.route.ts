@@ -7,7 +7,12 @@ import { PayrollValidation } from "./payroll.validation";
 
 const router = Router();
 
-router.get("/my", auth(), checkPermission("payroll.view_own"), PayrollController.getMyPayrolls);
+router.get(
+	"/my",
+	auth(),
+	checkPermission("payroll.view_own"),
+	PayrollController.getMyPayrolls,
+);
 
 router.post(
 	"/generate",
@@ -17,9 +22,19 @@ router.post(
 	PayrollController.generatePayroll,
 );
 
-router.get("/", auth(), checkPermission("payroll.view"), PayrollController.getAllPayrolls);
+router.get(
+	"/",
+	auth(),
+	checkPermission("payroll.view"),
+	PayrollController.getAllPayrolls,
+);
 
-router.get("/:id", auth(), checkPermission("payroll.view"), PayrollController.getPayrollById);
+router.get(
+	"/:id",
+	auth(),
+	checkPermission("payroll.view"),
+	PayrollController.getPayrollById,
+);
 
 router.post(
 	"/:id/approve",

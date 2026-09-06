@@ -10,7 +10,10 @@ const UpdateOrganizationZodSchema = z.object({
 		.string()
 		.min(2, "Slug must be at least 2 characters")
 		.max(100, "Slug must be at most 100 characters")
-		.regex(/^[a-z0-9-]+$/, "Slug must contain only lowercase letters, numbers, and hyphens")
+		.regex(
+			/^[a-z0-9-]+$/,
+			"Slug must contain only lowercase letters, numbers, and hyphens",
+		)
 		.optional(),
 });
 

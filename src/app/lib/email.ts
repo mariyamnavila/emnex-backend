@@ -11,7 +11,9 @@ interface ISendEmployeeWelcomeEmail {
 	organizationName: string;
 }
 
-export const sendEmployeeWelcomeEmail = async (payload: ISendEmployeeWelcomeEmail) => {
+export const sendEmployeeWelcomeEmail = async (
+	payload: ISendEmployeeWelcomeEmail,
+) => {
 	const templatePath = path.join(
 		process.cwd(),
 		"src",

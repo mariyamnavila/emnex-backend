@@ -275,7 +275,10 @@ const refreshToken = async (token: string) => {
 	}
 
 	// Check if token version matches (invalidates tokens after password change)
-	if (verified.data.tokenVersion !== undefined && verified.data.tokenVersion !== user.tokenVersion) {
+	if (
+		verified.data.tokenVersion !== undefined &&
+		verified.data.tokenVersion !== user.tokenVersion
+	) {
 		throw new AppError(
 			httpStatus.UNAUTHORIZED,
 			"Token has been invalidated. Please login again.",

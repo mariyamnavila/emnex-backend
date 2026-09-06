@@ -17,7 +17,13 @@ export interface ITaskUpdatePayload {
 }
 
 export interface ITaskStatusUpdatePayload {
-	status: "TODO" | "IN_PROGRESS" | "SUBMITTED" | "APPROVED" | "REJECTED" | "COMPLETED";
+	status:
+		| "TODO"
+		| "IN_PROGRESS"
+		| "SUBMITTED"
+		| "APPROVED"
+		| "REJECTED"
+		| "COMPLETED";
 }
 
 export interface ITaskAssignPayload {

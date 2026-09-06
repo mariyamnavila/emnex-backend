@@ -3,7 +3,10 @@ import type { IRequestUser } from "../../interfaces";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/AppError";
 import { AuditAction, createAuditLog } from "../../utils/auditLog";
-import { validateEmployeeCanAssign, validateEmployeeCanViewTasks } from "../../utils/employeeStatus";
+import {
+	validateEmployeeCanAssign,
+	validateEmployeeCanViewTasks,
+} from "../../utils/employeeStatus";
 import type {
 	ITaskAssignPayload,
 	ITaskCreatePayload,
@@ -309,10 +312,7 @@ const assignTask = async (
 	}
 
 	if (task.deletedAt) {
-		throw new AppError(
-			httpStatus.BAD_REQUEST,
-			"Cannot assign deleted task",
-		);
+		throw new AppError(httpStatus.BAD_REQUEST, "Cannot assign deleted task");
 	}
 
 	if (task.project.organizationId !== user.organizationId) {

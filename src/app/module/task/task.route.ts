@@ -7,7 +7,12 @@ import { TaskValidation } from "./task.validation";
 
 const router = Router();
 
-router.get("/my", auth(), checkPermission("task.view"), TaskController.getMyTasks);
+router.get(
+	"/my",
+	auth(),
+	checkPermission("task.view"),
+	TaskController.getMyTasks,
+);
 
 router.post(
 	"/",
@@ -17,9 +22,19 @@ router.post(
 	TaskController.createTask,
 );
 
-router.get("/", auth(), checkPermission("task.view"), TaskController.getAllTasks);
+router.get(
+	"/",
+	auth(),
+	checkPermission("task.view"),
+	TaskController.getAllTasks,
+);
 
-router.get("/:id", auth(), checkPermission("task.view"), TaskController.getTaskById);
+router.get(
+	"/:id",
+	auth(),
+	checkPermission("task.view"),
+	TaskController.getTaskById,
+);
 
 router.patch(
 	"/:id",
@@ -29,7 +44,12 @@ router.patch(
 	TaskController.updateTask,
 );
 
-router.delete("/:id", auth(), checkPermission("task.delete"), TaskController.deleteTask);
+router.delete(
+	"/:id",
+	auth(),
+	checkPermission("task.delete"),
+	TaskController.deleteTask,
+);
 
 router.post(
 	"/:id/assign",
@@ -47,6 +67,11 @@ router.patch(
 	TaskController.updateTaskStatus,
 );
 
-router.get("/:id/submissions", auth(), checkPermission("task.view", "submission.view"), TaskController.getTaskSubmissions);
+router.get(
+	"/:id/submissions",
+	auth(),
+	checkPermission("task.view", "submission.view"),
+	TaskController.getTaskSubmissions,
+);
 
 export const TaskRoutes = router;

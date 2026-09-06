@@ -40,10 +40,7 @@ export const checkPermission = (...requiredPermissions: string[]) => {
 		const user = req.user as IRequestUser;
 
 		if (!user || !user.userId) {
-			throw new AppError(
-				httpStatus.UNAUTHORIZED,
-				"You are not authenticated.",
-			);
+			throw new AppError(httpStatus.UNAUTHORIZED, "You are not authenticated.");
 		}
 
 		const hasAllPermissions = requiredPermissions.every((perm) =>

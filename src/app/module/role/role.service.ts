@@ -83,7 +83,7 @@ const getRoleById = async (id: string, user: IRequestUser) => {
 		},
 	});
 
-	if (!role) {
+	if (!role || role.deletedAt) {
 		throw new AppError(httpStatus.NOT_FOUND, "Role not found");
 	}
 
@@ -234,7 +234,7 @@ const getRolePermissions = async (roleId: string, user: IRequestUser) => {
 		where: { id: roleId },
 	});
 
-	if (!role) {
+	if (!role || role.deletedAt) {
 		throw new AppError(httpStatus.NOT_FOUND, "Role not found");
 	}
 
@@ -266,6 +266,13 @@ const assignPermissions = async (
 
 	if (!role) {
 		throw new AppError(httpStatus.NOT_FOUND, "Role not found");
+	}
+
+	if (role.deletedAt) {
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			"Cannot assign permissions to a deleted role",
+		);
 	}
 
 	if (role.organizationId !== user.organizationId) {
@@ -385,6 +392,13 @@ const removePermission = async (
 
 	if (!role) {
 		throw new AppError(httpStatus.NOT_FOUND, "Role not found");
+	}
+
+	if (role.deletedAt) {
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			"Cannot remove permissions from a deleted role",
+		);
 	}
 
 	if (role.organizationId !== user.organizationId) {

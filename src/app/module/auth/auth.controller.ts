@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import httpStatus from "http-status";
 import config from "../../config";
+import { AppError } from "../../utils/AppError";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import type { IRequestUser } from "./auth.interface";
@@ -84,7 +85,7 @@ const getMe = catchAsync(async (req: Request, res: Response) => {
 
 const refreshToken = catchAsync(async (req: Request, res: Response) => {
 	if (!req.cookies.refreshToken) {
-		throw new Error("Refresh token is missing");
+		throw new AppError(httpStatus.BAD_REQUEST, "Refresh token is missing");
 	}
 
 	const result = await AuthService.refreshToken(req.cookies.refreshToken);
@@ -149,7 +150,7 @@ const uploadAvatar = catchAsync(async (req: Request, res: Response) => {
 	const file = req.file;
 
 	if (!file) {
-		throw new Error("Please upload an image file");
+		throw new AppError(httpStatus.BAD_REQUEST, "Please upload an image file");
 	}
 
 	const result = await AuthService.uploadAvatar(user, file);
