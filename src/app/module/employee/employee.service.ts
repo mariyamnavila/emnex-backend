@@ -252,6 +252,10 @@ const getEmployeeById = async (id: string, user: IRequestUser) => {
 	return employee;
 };
 
+const isNegativeStatus = (status?: string) => {
+	return status === "TERMINATED" || status === "SUSPENDED" || status === "INACTIVE";
+};
+
 const updateEmployee = async (
 	id: string,
 	payload: IEmployeeUpdatePayload,
@@ -259,6 +263,13 @@ const updateEmployee = async (
 ) => {
 	const employee = await prisma.employee.findUnique({
 		where: { id },
+		include: {
+			user: {
+				include: {
+					role: true,
+				},
+			},
+		},
 	});
 
 	if (!employee) {
@@ -272,11 +283,21 @@ const updateEmployee = async (
 		);
 	}
 
-	// Prevent self-status change to TERMINATED
-	if (employee.userId === user.userId && payload.status === "TERMINATED") {
+	const targetIsAdmin = employee.user.role.name === "ADMIN";
+
+	// Prevent self-status change to any negative status
+	if (employee.userId === user.userId && isNegativeStatus(payload.status)) {
 		throw new AppError(
 			httpStatus.FORBIDDEN,
-			"Cannot terminate your own account",
+			"Cannot change your own status to a negative state",
+		);
+	}
+
+	// Prevent anyone from changing admin's status to a negative state
+	if (targetIsAdmin && isNegativeStatus(payload.status)) {
+		throw new AppError(
+			httpStatus.FORBIDDEN,
+			"Cannot change the admin's status to a negative state",
 		);
 	}
 
@@ -303,6 +324,13 @@ const updateEmployee = async (
 const deleteEmployee = async (id: string, user: IRequestUser) => {
 	const employee = await prisma.employee.findUnique({
 		where: { id },
+		include: {
+			user: {
+				include: {
+					role: true,
+				},
+			},
+		},
 	});
 
 	if (!employee) {
@@ -321,6 +349,14 @@ const deleteEmployee = async (id: string, user: IRequestUser) => {
 		throw new AppError(
 			httpStatus.FORBIDDEN,
 			"Cannot terminate your own account",
+		);
+	}
+
+	// Prevent terminating admin
+	if (employee.user.role.name === "ADMIN") {
+		throw new AppError(
+			httpStatus.FORBIDDEN,
+			"Cannot terminate the admin account",
 		);
 	}
 
