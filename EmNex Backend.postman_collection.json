@@ -3194,6 +3194,115 @@
       ]
     },
     {
+      "name": "Audit Logs",
+      "item": [
+        {
+          "name": "Get All Audit Logs (Pagination & Filtering)",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "localhost:5000/api/v1/audit-logs?page=1&limit=20",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "audit-logs"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Items per page"
+                },
+                {
+                  "key": "action",
+                  "value": "CREATE",
+                  "description": "Filter by action (e.g. CREATE, UPDATE, DELETE)",
+                  "disabled": true
+                },
+                {
+                  "key": "entity",
+                  "value": "Employee",
+                  "description": "Filter by entity type (e.g. Employee, Project, Task, Payroll)",
+                  "disabled": true
+                },
+                {
+                  "key": "userId",
+                  "value": "{{userId}}",
+                  "description": "Filter by user ID who performed the action",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Audit Log By ID",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "localhost:5000/api/v1/audit-logs/:id",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "audit-logs",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{auditLogId}}",
+                  "description": "Audit Log ID"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "System",
       "item": [
         {
@@ -3288,6 +3397,16 @@
     {
       "key": "paymentId",
       "value": "b2c3d4e5-f6a7-8901-bcde-f23456789012",
+      "type": "string"
+    },
+    {
+      "key": "auditLogId",
+      "value": "c3d4e5f6-a7b8-9012-cdef-345678901234",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "d4e5f6a7-b8c9-0123-def4-567890123456",
       "type": "string"
     }
   ]
