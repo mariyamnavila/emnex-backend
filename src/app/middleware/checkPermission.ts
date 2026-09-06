@@ -46,43 +46,13 @@ export const checkPermission = (...requiredPermissions: string[]) => {
 			);
 		}
 
-		// Get user with role
-		const userRecord = await prisma.user.findUnique({
-			where: { id: user.userId },
-			include: {
-				role: {
-					include: {
-						permissions: {
-							include: {
-								permission: true,
-							},
-						},
-					},
-				},
-			},
-		});
-
-		if (!userRecord) {
-			throw new AppError(httpStatus.UNAUTHORIZED, "User not found.");
-		}
-
-		if (!userRecord.role) {
-			throw new AppError(httpStatus.FORBIDDEN, "No role assigned.");
-		}
-
-		// Get user's permission names
-		const userPermissions = userRecord.role.permissions.map(
-			(rp) => rp.permission.name,
-		);
-
-		// Check if user has all required permissions
 		const hasAllPermissions = requiredPermissions.every((perm) =>
-			userPermissions.includes(perm),
+			user.permissions.includes(perm),
 		);
 
 		if (!hasAllPermissions) {
 			const missing = requiredPermissions.filter(
-				(perm) => !userPermissions.includes(perm),
+				(perm) => !user.permissions.includes(perm),
 			);
 			throw new AppError(
 				httpStatus.FORBIDDEN,

@@ -4,6 +4,7 @@ export interface IRequestUser {
 	name: string;
 	role: string;
 	organizationId: string;
+	permissions: string[];
 }
 
 declare global {

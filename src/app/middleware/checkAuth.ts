@@ -32,7 +32,15 @@ export const auth = () => {
 		const user = await prisma.user.findUnique({
 			where: { id: userId },
 			include: {
-				role: true,
+				role: {
+					include: {
+						permissions: {
+							include: {
+								permission: true,
+							},
+						},
+					},
+				},
 				employee: true,
 			},
 		});
@@ -66,12 +74,17 @@ export const auth = () => {
 			);
 		}
 
+		const permissions = user.role?.permissions?.map(
+			(rp) => rp.permission.name,
+		) ?? [];
+
 		req.user = {
 			email: user.email,
 			name: user.name,
 			userId: user.id,
 			role: user.role.name,
 			organizationId: user.organizationId,
+			permissions,
 		};
 
 		next();
