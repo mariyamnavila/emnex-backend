@@ -154,15 +154,19 @@ const createEmployee = async (
 		where: { id: user.organizationId },
 	});
 
-	// Send welcome or invation email
-	sendEmployeeWelcomeEmail({
-		to: payload.email,
-		name: payload.name,
-		email: payload.email,
-		temporaryPassword,
-		roleName: role.name,
-		organizationName: organization?.name || "EmNex",
-	}).catch(() => {});
+	// Send welcome email
+	try {
+		await sendEmployeeWelcomeEmail({
+			to: payload.email,
+			name: payload.name,
+			email: payload.email,
+			temporaryPassword,
+			roleName: role.name,
+			organizationName: organization?.name || "EmNex",
+		});
+	} catch (error) {
+		console.error("Failed to send welcome email:", error);
+	}
 
 	return {
 		employee: result,
