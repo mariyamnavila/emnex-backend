@@ -4,6 +4,23 @@ This file is excluded from git commits and serves as a shared checklist to track
 
 ---
 
+## 📝 Frontend Integration Changes (EmNex-Frontend)
+
+> **Rule:** We HAVE permission to modify this backend while building `Milestone-6/EmNex-Frontend`. Any such change must be logged here with date, files touched, and reason — regardless of how small. Frontend-only work never touches the backend.
+
+| Date | Change | Files | Reason | Status |
+|------|--------|-------|--------|--------|
+| 2026-09-30 | Added `FRONTEND_URL=http://localhost:3000` | `.env` | CORS origin missing → browser calls from `localhost:3000` fail (`cors({ origin: config.frontend_url, credentials: true })`) | ✅ |
+| _pending_ | Add `submission.update` to seeded permissions (or drop the check) | `src/app/utils/seed.ts` (`src/app/module/submission/...`) | `PATCH /submissions/:id` requires `submission.update` which is not in the 40 seeded permissions → route returns 403 for **every** role incl. ADMIN | ⬜ |
+| _pending_ | Verify `APP_URL=http://localhost:3000` (already set) | `.env` | Stripe success/cancel redirects must land on frontend `/payment/success` & `/payment/cancel` — value already correct for local dev; update to prod URL on deploy | ✅ |
+
+**Known issues — open decision (backend change allowed, but only if it helps):**
+- `EMPLOYEE` role lacks `analytics.view` → OPTION A: add the permission to the seed so the employee dashboard can use `/analytics/dashboard`, OR OPTION B: frontend builds the employee overview from `/tasks/my`, `/submissions/my`, `/payroll/my`, `/payments/my` (no backend change). Decide when building Day 3.
+- Employees lack `task.update` → OPTION A: add it so employees can move own task status (TODO→IN_PROGRESS→SUBMITTED), OR OPTION B: read-only "My Tasks" + log hours only (`submission.create`). OPTION A gives a better employee workflow — likely worth the seed change + migration.
+- Only 40 permissions seeded while README claims 42 — align docs or seed when touched.
+
+---
+
 ## Assignment Requirements Checklist
 
 ### 1. API Design & Documentation (15%)

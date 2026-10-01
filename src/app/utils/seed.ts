@@ -33,6 +33,7 @@ const defaultPermissions = [
 	// Submission
 	"submission.view",
 	"submission.create",
+	"submission.update",
 	"submission.approve",
 	"submission.reject",
 
@@ -110,8 +111,10 @@ const systemRoleTemplates = [
 		description: "Regular employee",
 		permissions: [
 			"task.view",
+			"task.update",
 			"submission.view",
 			"submission.create",
+			"submission.update",
 			"payroll.view_own",
 			"payment.view_own",
 		],
@@ -120,46 +123,67 @@ const systemRoleTemplates = [
 
 export const seed = async () => {
 	try {
-		// Check if already seeded
-		const existingPermissions = await prisma.permission.count();
-		if (existingPermissions > 0) {
-			console.log("Database already seeded, skipping...");
-			return;
-		}
-
-		// Bulk create permissions
+		// Always ensure all permissions exist (idempotent, skips duplicates)
 		await prisma.permission.createMany({
 			data: defaultPermissions.map((name) => ({ name })),
 			skipDuplicates: true,
 		});
-		console.log("Permissions seeded");
 
 		// Get all permissions for mapping
 		const allPermissions = await prisma.permission.findMany();
 		const permissionMap = new Map(allPermissions.map((p) => [p.name, p.id]));
 
-		// Create system roles with permissions in transaction
-		for (const roleData of systemRoleTemplates) {
-			const role = await prisma.role.create({
-				data: {
-					name: roleData.name,
-					description: roleData.description,
-					isSystem: true,
-				},
-			});
+		// Check if system roles already exist
+		const existingRoles = await prisma.role.count({
+			where: { isSystem: true, organizationId: null },
+		});
 
-			const rolePermissions = roleData.permissions
-				.filter((p) => permissionMap.has(p))
-				.map((p) => ({
-					roleId: role.id,
-					permissionId: permissionMap.get(p)!,
-				}));
+		if (existingRoles === 0) {
+			// First run: create system roles with permissions
+			for (const roleData of systemRoleTemplates) {
+				const role = await prisma.role.create({
+					data: {
+						name: roleData.name,
+						description: roleData.description,
+						isSystem: true,
+					},
+				});
 
-			await prisma.rolePermission.createMany({
-				data: rolePermissions,
-			});
+				const rolePermissions = roleData.permissions
+					.filter((p) => permissionMap.has(p))
+					.map((p) => ({
+						roleId: role.id,
+						permissionId: permissionMap.get(p)!,
+					}));
+
+				await prisma.rolePermission.createMany({
+					data: rolePermissions,
+					skipDuplicates: true,
+				});
+			}
+			console.log("System roles seeded");
+		} else {
+			// Existing DB: backfill any missing role-permission links
+			for (const roleData of systemRoleTemplates) {
+				const role = await prisma.role.findFirst({
+					where: { name: roleData.name, isSystem: true, organizationId: null },
+				});
+				if (!role) continue;
+
+				const rolePermissions = roleData.permissions
+					.filter((p) => permissionMap.has(p))
+					.map((p) => ({
+						roleId: role.id,
+						permissionId: permissionMap.get(p)!,
+					}));
+
+				await prisma.rolePermission.createMany({
+					data: rolePermissions,
+					skipDuplicates: true,
+				});
+			}
+			console.log("Permissions ensured, role permissions backfilled");
 		}
-		console.log("System roles seeded");
 	} catch (error) {
 		console.error("Error seeding:", error);
 	}
