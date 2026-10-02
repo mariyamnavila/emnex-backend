@@ -243,7 +243,15 @@ const getMe = async (user: IRequestUser) => {
 		where: { id: user.userId },
 		omit: { password: true },
 		include: {
-			role: true,
+			role: {
+				include: {
+					permissions: {
+						include: {
+							permission: true,
+						},
+					},
+				},
+			},
 			organization: true,
 		},
 	});
@@ -252,7 +260,16 @@ const getMe = async (user: IRequestUser) => {
 		throw new AppError(httpStatus.NOT_FOUND, "User not found");
 	}
 
-	return userRecord;
+	const permissions =
+		userRecord.role?.permissions?.map((rp) => rp.permission.name) ?? [];
+
+	// Strip the nested permission rows, return flat string array
+	const { role, ...rest } = userRecord;
+	return {
+		...rest,
+		role: { id: role.id, name: role.name, description: role.description },
+		permissions,
+	};
 };
 
 const refreshToken = async (token: string) => {
