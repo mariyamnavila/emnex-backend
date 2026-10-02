@@ -26,30 +26,54 @@ import { TaskRoutes } from "./app/module/task/task.route";
 
 const app: Application = express();
 
+// Behind Vercel's proxy: use the client IP from X-Forwarded-For for rate limiting
+if (config.is_vercel) {
+	app.set("trust proxy", 1);
+}
+
 // Security headers
 app.use(helmet());
 
-// Rate limiting
-const limiter = rateLimit({
-	windowMs: 15 * 60 * 1000,
-	max: 100,
-	message: "Too many requests from this IP, please try again after 15 minutes",
-});
-app.use("/api", limiter);
-
-// Stricter rate limit for auth routes
-const authLimiter = rateLimit({
-	windowMs: 15 * 60 * 1000,
-	max: 20,
-	message:
-		"Too many authentication attempts, please try again after 15 minutes",
-});
-
+// Before the limiters, so 429 responses are readable by the browser
 app.use(
 	cors({
 		origin: config.frontend_url,
 		credentials: true,
 	}),
+);
+
+const tooManyRequests = (message: string) => ({
+	success: false,
+	statusCode: 429,
+	message,
+});
+
+// Rate limiting
+const limiter = rateLimit({
+	windowMs: 15 * 60 * 1000,
+	max: 300,
+	message: tooManyRequests(
+		"Too many requests from this IP, please try again after 15 minutes",
+	),
+});
+app.use("/api", limiter);
+
+// Stricter limit only where credentials are checked (brute-force targets)
+const authLimiter = rateLimit({
+	windowMs: 15 * 60 * 1000,
+	max: 20,
+	message: tooManyRequests(
+		"Too many authentication attempts, please try again after 15 minutes",
+	),
+});
+app.use(
+	[
+		"/api/v1/auth/login",
+		"/api/v1/auth/register",
+		"/api/v1/auth/google",
+		"/api/v1/auth/change-password",
+	],
+	authLimiter,
 );
 
 app.use("/api/v1/payments/webhook", express.raw({ type: "application/json" }));
@@ -59,7 +83,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // Routes
-app.use("/api/v1/auth", authLimiter, AuthRoutes);
+app.use("/api/v1/auth", AuthRoutes);
 app.use("/api/v1/organizations", OrganizationRoutes);
 app.use("/api/v1/roles", RoleRoutes);
 app.use("/api/v1/departments", DepartmentRoutes);

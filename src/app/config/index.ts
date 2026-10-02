@@ -5,6 +5,7 @@ dotenv.config({ path: path.join(process.cwd(), ".env") });
 
 export default {
 	node_env: process.env.NODE_ENV,
+	is_vercel: Boolean(process.env.VERCEL),
 	port: process.env.PORT,
 	database_url: process.env.DATABASE_URL,
 	frontend_url: process.env.FRONTEND_URL,
