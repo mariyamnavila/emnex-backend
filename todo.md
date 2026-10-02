@@ -10,6 +10,7 @@ This file is excluded from git commits and serves as a shared checklist to track
 
 | Date | Change | Files | Reason | Status |
 |------|--------|-------|--------|--------|
+| 2026-10-02 | Performance: (1) `relationJoins` preview → nested `include` = 1 SQL query (auth() was 5 sequential queries/request); (2) pg pool keeps idle connections 5 min instead of 10 s (reconnect = 2–3 s over TLS); (3) `app.listen` before `seed()` (seed runs in background). Measured: startup to listening 6.9 s → 1.8 s, login 6.1 s → 0.4 s, `/auth/me` ~5.5 s → 0.8 s, `/employees` 1.8–3.6 s → 0.7 s | `prisma/schema/schema.prisma` (+ `npx prisma generate`), `src/app/lib/prisma.ts`, `src/server.ts` | Each DB round trip is ~285 ms (remote Prisma Postgres region) — fewer round trips + no reconnects | ✅ |
 | 2026-09-30 | Added `FRONTEND_URL=http://localhost:3000` | `.env` | CORS origin missing → browser calls from `localhost:3000` fail (`cors({ origin: config.frontend_url, credentials: true })`) | ✅ |
 | _pending_ | Add `submission.update` to seeded permissions (or drop the check) | `src/app/utils/seed.ts` (`src/app/module/submission/...`) | `PATCH /submissions/:id` requires `submission.update` which is not in the 40 seeded permissions → route returns 403 for **every** role incl. ADMIN | ⬜ |
 | _pending_ | Verify `APP_URL=http://localhost:3000` (already set) | `.env` | Stripe success/cancel redirects must land on frontend `/payment/success` & `/payment/cancel` — value already correct for local dev; update to prod URL on deploy | ✅ |

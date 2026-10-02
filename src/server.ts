@@ -10,11 +10,12 @@ async function main() {
 		await prisma.$connect();
 		console.log("Connected to the database successfully");
 
-		await seed();
-
 		app.listen(PORT, () => {
 			console.log(`Emnex Server is running on port ${PORT}`);
 		});
+
+		// Seeding is slow; don't block startup on it
+		void seed();
 	} catch (error) {
 		console.error("Error starting server:", error);
 		await prisma.$disconnect();
