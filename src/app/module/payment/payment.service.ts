@@ -29,17 +29,20 @@ const createCheckoutSession = async (
 ) => {
 	const { payrollId, currency = "usd" } = payload;
 
-	const payroll = await prisma.payroll.findFirst({
-		where: {
-			id: payrollId,
-			organizationId: user.organizationId,
-		},
-		include: {
-			employee: {
-				include: { user: { omit: { password: true } } },
+	const [payroll, existingPayment] = await Promise.all([
+		prisma.payroll.findFirst({
+			where: {
+				id: payrollId,
+				organizationId: user.organizationId,
 			},
-		},
-	});
+			include: {
+				employee: {
+					include: { user: { omit: { password: true } } },
+				},
+			},
+		}),
+		prisma.payment.findUnique({ where: { payrollId } }),
+	]);
 
 	if (!payroll) {
 		throw new AppError(httpStatus.NOT_FOUND, "Payroll not found");
@@ -52,10 +55,6 @@ const createCheckoutSession = async (
 		);
 	}
 
-	const existingPayment = await prisma.payment.findUnique({
-		where: { payrollId },
-	});
-
 	if (existingPayment?.status === "COMPLETED") {
 		throw new AppError(
 			httpStatus.CONFLICT,
@@ -63,13 +62,11 @@ const createCheckoutSession = async (
 		);
 	}
 
-	// Retry after a cancelled/abandoned checkout: close the old session so it can't also be paid
+	// Retry: close the old checkout so it can't also be paid — in the background, so it doesn't delay the new one
 	if (existingPayment?.transactionId?.startsWith("cs_")) {
-		try {
-			await stripe.checkout.sessions.expire(existingPayment.transactionId);
-		} catch {
+		stripe.checkout.sessions.expire(existingPayment.transactionId).catch(() => {
 			// already completed/expired sessions can't be expired — nothing to do
-		}
+		});
 	}
 
 	const appUrl = config.app_url;
