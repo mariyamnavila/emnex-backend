@@ -45,6 +45,13 @@ const generatePayroll = async (
 		);
 	}
 
+	if (new Date(periodStart) > new Date()) {
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			"Cannot generate payroll for a period that hasn't started yet",
+		);
+	}
+
 	if (!employee) {
 		throw new AppError(httpStatus.NOT_FOUND, "Employee not found");
 	}
@@ -98,23 +105,52 @@ const generatePayroll = async (
 		},
 	});
 
+	const toCents = (amount: number) => Math.round(amount * 100) / 100;
+
 	// Calculate gross amount
 	let grossAmount: number;
 
 	if (employee.salaryType === "HOURLY") {
+		const hourlyRate = Number(employee.hourlyRate || 0);
+		if (hourlyRate <= 0) {
+			throw new AppError(
+				httpStatus.BAD_REQUEST,
+				"This employee has no hourly rate set",
+			);
+		}
+
 		// Sum hours from approved submissions
 		const totalHours = approvedSubmissions.reduce(
 			(sum, sub) => sum + Number(sub.hoursWorked),
 			0,
 		);
-		grossAmount = totalHours * Number(employee.hourlyRate || 0);
+		if (totalHours === 0) {
+			throw new AppError(
+				httpStatus.BAD_REQUEST,
+				`${employee.user.name} has no approved work hours in this period`,
+			);
+		}
+
+		grossAmount = toCents(totalHours * hourlyRate);
 	} else {
-		// Monthly salary
-		grossAmount = Number(employee.salary || 0);
+		grossAmount = toCents(Number(employee.salary || 0));
+		if (grossAmount <= 0) {
+			throw new AppError(
+				httpStatus.BAD_REQUEST,
+				"This employee has no monthly salary set",
+			);
+		}
+	}
+
+	if (deductions > grossAmount) {
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			`Deductions (${deductions}) can't be more than gross pay (${grossAmount})`,
+		);
 	}
 
 	// Calculate net amount
-	const netAmount = grossAmount - deductions;
+	const netAmount = toCents(grossAmount - deductions);
 
 	// Create payroll
 	const payroll = await prisma.payroll.create({
