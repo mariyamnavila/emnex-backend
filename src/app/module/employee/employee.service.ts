@@ -6,7 +6,7 @@ import type { IRequestUser } from "../../interfaces";
 import { sendEmployeeWelcomeEmail } from "../../lib/email";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/AppError";
-import { AuditAction, createAuditLog } from "../../utils/auditLog";
+import { AuditAction, createAuditLog, diffFields } from "../../utils/auditLog";
 import type {
 	IEmployeeCreatePayload,
 	IEmployeeQueryParams,
@@ -142,7 +142,17 @@ const createEmployee = async (
 				action: AuditAction.CREATE_EMPLOYEE,
 				entity: "Employee",
 				entityId: employee.id,
-				metadata: { email, roleId, departmentId, jobTitle },
+				metadata: {
+					employeeName: name,
+					email,
+					employeeCode,
+					roleName: role.name,
+					departmentName: employee.department?.name ?? null,
+					jobTitle,
+					salaryType,
+					salary: salary ?? null,
+					hourlyRate: hourlyRate ?? null,
+				},
 			},
 		});
 
@@ -286,6 +296,7 @@ const updateEmployee = async (
 					role: true,
 				},
 			},
+			department: true,
 		},
 	});
 
@@ -344,13 +355,40 @@ const updateEmployee = async (
 		},
 	});
 
-	createAuditLog({
-		user,
-		action: AuditAction.UPDATE_EMPLOYEE,
-		entity: "Employee",
-		entityId: id,
-		metadata: payload,
+	const auditFields = (e: typeof updatedEmployee) => ({
+		department: e.department?.name ?? null,
+		jobTitle: e.jobTitle,
+		salaryType: e.salaryType,
+		salary: e.salary,
+		hourlyRate: e.hourlyRate,
+		status: e.status,
 	});
+	const changes = diffFields(auditFields(employee), auditFields(updatedEmployee), [
+		"department",
+		"jobTitle",
+		"salaryType",
+		"salary",
+		"hourlyRate",
+		"status",
+	]);
+	const changedFields = Object.keys(changes);
+
+	if (changedFields.length > 0) {
+		createAuditLog({
+			user,
+			action:
+				changedFields.length === 1 && changes.status
+					? AuditAction.CHANGE_EMPLOYEE_STATUS
+					: AuditAction.UPDATE_EMPLOYEE,
+			entity: "Employee",
+			entityId: id,
+			metadata: {
+				employeeName: employee.user.name,
+				employeeCode: employee.employeeCode,
+				changes,
+			},
+		});
+	}
 
 	return updatedEmployee;
 };
@@ -405,6 +443,12 @@ const deleteEmployee = async (id: string, user: IRequestUser) => {
 		action: AuditAction.DELETE_EMPLOYEE,
 		entity: "Employee",
 		entityId: id,
+		metadata: {
+			employeeName: employee.user.name,
+			employeeCode: employee.employeeCode,
+			from: employee.status,
+			to: "TERMINATED",
+		},
 	});
 
 	return { message: "Employee terminated successfully" };

@@ -69,6 +69,38 @@ interface IAuditLogData {
 	ipAddress?: string;
 }
 
+// Metadata convention: names next to ids (employeeName, roleName, ...), money as numbers,
+// dates as ISO strings, updates as `changes: { field: { from, to } }`.
+type AuditValue = string | number | boolean | null;
+
+// Prisma Decimal / Date → plain JSON values (Decimal would otherwise be stored as a string)
+export const toAuditValue = (value: unknown): AuditValue => {
+	if (value === null || value === undefined) return null;
+	if (value instanceof Date) return value.toISOString();
+	if (typeof value === "object" && "toNumber" in value && typeof value.toNumber === "function") {
+		return value.toNumber() as number;
+	}
+	if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+		return value;
+	}
+	return String(value);
+};
+
+// Only the fields that actually changed
+export const diffFields = (
+	before: Record<string, unknown>,
+	after: Record<string, unknown>,
+	fields: string[],
+) => {
+	const changes: Record<string, { from: AuditValue; to: AuditValue }> = {};
+	for (const field of fields) {
+		const from = toAuditValue(before[field]);
+		const to = toAuditValue(after[field]);
+		if (from !== to) changes[field] = { from, to };
+	}
+	return changes;
+};
+
 export const createAuditLog = async (data: IAuditLogData) => {
 	try {
 		await prisma.auditLog.create({

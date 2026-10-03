@@ -5,7 +5,7 @@ import type { IRequestUser } from "../../interfaces";
 import { prisma } from "../../lib/prisma";
 import { stripe } from "../../lib/stripe";
 import { AppError } from "../../utils/AppError";
-import { AuditAction, createAuditLog } from "../../utils/auditLog";
+import { AuditAction, createAuditLog, toAuditValue } from "../../utils/auditLog";
 import type {
 	IPaymentCreatePayload,
 	IPaymentQueryParams,
@@ -131,7 +131,13 @@ const createCheckoutSession = async (
 		action: AuditAction.PAYMENT_INITIATED,
 		entity: "Payment",
 		entityId: payment.id,
-		metadata: { payrollId, amount: payroll.netAmount, currency },
+		metadata: {
+			employeeName: payroll.employee.user.name,
+			periodStart: toAuditValue(payroll.periodStart),
+			periodEnd: toAuditValue(payroll.periodEnd),
+			amount: toAuditValue(payroll.netAmount),
+			currency,
+		},
 	});
 
 	return {
@@ -164,12 +170,29 @@ const logPaymentEvent = async (
 
 	if (!userId) return;
 
+	const details = await prisma.payment.findUnique({
+		where: { id: payment.id },
+		select: {
+			amount: true,
+			currency: true,
+			employee: { select: { user: { select: { name: true } } } },
+			payroll: { select: { periodStart: true, periodEnd: true } },
+		},
+	});
+
 	createAuditLog({
 		user: { userId, organizationId: payment.organizationId },
 		action,
 		entity: "Payment",
 		entityId: payment.id,
-		metadata,
+		metadata: {
+			employeeName: details?.employee.user.name ?? null,
+			periodStart: toAuditValue(details?.payroll.periodStart),
+			periodEnd: toAuditValue(details?.payroll.periodEnd),
+			amount: toAuditValue(details?.amount),
+			currency: details?.currency ?? null,
+			...metadata,
+		},
 	});
 };
 
@@ -205,13 +228,7 @@ const completePayment = async (
 	await logPaymentEvent(
 		payment,
 		AuditAction.PAYMENT_COMPLETED,
-		{
-			payrollId,
-			amount: toNumber(payment.amount),
-			currency: payment.currency,
-			transactionId: paymentIntentId,
-			source,
-		},
+		{ transactionId: paymentIntentId, source },
 		actor,
 	);
 	return true;
@@ -318,7 +335,6 @@ const handleWebhook = async (rawBody: string | Buffer, signature: string) => {
 			data: { status: "FAILED" },
 		});
 		await logPaymentEvent(payment, AuditAction.PAYMENT_FAILED, {
-			payrollId,
 			reason: "async payment failed",
 			source: "webhook",
 		});
@@ -343,7 +359,6 @@ const handleWebhook = async (rawBody: string | Buffer, signature: string) => {
 				data: { status: "FAILED" },
 			});
 			await logPaymentEvent(payment, AuditAction.PAYMENT_FAILED, {
-				payrollId: payment.payrollId,
 				reason: paymentIntent.last_payment_error?.message ?? "payment failed",
 				source: "webhook",
 			});

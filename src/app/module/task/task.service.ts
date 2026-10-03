@@ -2,7 +2,7 @@ import httpStatus from "http-status";
 import type { IRequestUser } from "../../interfaces";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/AppError";
-import { AuditAction, createAuditLog } from "../../utils/auditLog";
+import { AuditAction, createAuditLog, toAuditValue } from "../../utils/auditLog";
 import {
 	validateEmployeeCanAssign,
 	validateEmployeeCanViewTasks,
@@ -84,7 +84,14 @@ const createTask = async (payload: ITaskCreatePayload, user: IRequestUser) => {
 		action: AuditAction.CREATE_TASK,
 		entity: "Task",
 		entityId: task.id,
-		metadata: { title, employeeId, projectId },
+		metadata: {
+			taskTitle: title,
+			projectName: task.project.name,
+			assigneeName: task.employee.user.name,
+			priority: task.priority,
+			dueDate: toAuditValue(task.dueDate),
+			estimatedHours: toAuditValue(task.estimatedHours),
+		},
 	});
 
 	return task;
@@ -291,7 +298,7 @@ const deleteTask = async (id: string, user: IRequestUser) => {
 		action: AuditAction.DELETE_TASK,
 		entity: "Task",
 		entityId: id,
-		metadata: { title: task.title },
+		metadata: { taskTitle: task.title, projectName: task.project.name },
 	});
 
 	return { message: "Task deleted successfully" };
@@ -304,7 +311,10 @@ const assignTask = async (
 ) => {
 	const task = await prisma.task.findUnique({
 		where: { id },
-		include: { project: true },
+		include: {
+			project: true,
+			employee: { include: { user: { select: { name: true } } } },
+		},
 	});
 
 	if (!task) {
@@ -357,7 +367,12 @@ const assignTask = async (
 		action: AuditAction.ASSIGN_TASK,
 		entity: "Task",
 		entityId: id,
-		metadata: { employeeId: payload.employeeId },
+		metadata: {
+			taskTitle: task.title,
+			projectName: task.project.name,
+			from: task.employee.user.name,
+			to: updatedTask.employee.user.name,
+		},
 	});
 
 	return updatedTask;
@@ -429,7 +444,12 @@ const updateTaskStatus = async (
 		action: AuditAction.CHANGE_TASK_STATUS,
 		entity: "Task",
 		entityId: id,
-		metadata: { from: task.status, to: status },
+		metadata: {
+			taskTitle: task.title,
+			projectName: task.project.name,
+			from: task.status,
+			to: status,
+		},
 	});
 
 	return updatedTask;

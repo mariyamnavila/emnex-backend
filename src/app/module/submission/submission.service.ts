@@ -2,7 +2,7 @@ import httpStatus from "http-status";
 import type { IRequestUser } from "../../interfaces";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/AppError";
-import { AuditAction, createAuditLog } from "../../utils/auditLog";
+import { AuditAction, createAuditLog, toAuditValue } from "../../utils/auditLog";
 import {
 	validateEmployeeCanViewSubmissions,
 	validateEmployeeCanWork,
@@ -98,7 +98,12 @@ const createSubmission = async (
 		action: AuditAction.SUBMIT_WORK,
 		entity: "WorkSubmission",
 		entityId: submission.id,
-		metadata: { taskId, employeeId: employee.id, hoursWorked },
+		metadata: {
+			taskTitle: submission.task.title,
+			employeeName: submission.employee.user.name,
+			hoursWorked: toAuditValue(submission.hoursWorked),
+			workDate: toAuditValue(submission.workDate),
+		},
 	});
 
 	return submission;
@@ -326,8 +331,10 @@ const approveSubmission = async (id: string, user: IRequestUser) => {
 				entity: "WorkSubmission",
 				entityId: id,
 				metadata: {
-					taskId: submission.taskId,
-					employeeId: submission.employeeId,
+					taskTitle: updatedSubmission.task.title,
+					employeeName: updatedSubmission.employee.user.name,
+					hoursWorked: toAuditValue(updatedSubmission.hoursWorked),
+					workDate: toAuditValue(updatedSubmission.workDate),
 				},
 			},
 		});
@@ -405,8 +412,10 @@ const rejectSubmission = async (
 				entity: "WorkSubmission",
 				entityId: id,
 				metadata: {
-					taskId: submission.taskId,
-					employeeId: submission.employeeId,
+					taskTitle: updatedSubmission.task.title,
+					employeeName: updatedSubmission.employee.user.name,
+					hoursWorked: toAuditValue(updatedSubmission.hoursWorked),
+					workDate: toAuditValue(updatedSubmission.workDate),
 					reason,
 				},
 			},

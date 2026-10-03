@@ -3,7 +3,7 @@ import type { IRequestUser } from "../../interfaces";
 import { prisma } from "../../lib/prisma";
 import { checkUserPermission } from "../../middleware/checkPermission";
 import { AppError } from "../../utils/AppError";
-import { AuditAction, createAuditLog } from "../../utils/auditLog";
+import { AuditAction, createAuditLog, toAuditValue } from "../../utils/auditLog";
 import type {
 	IPayrollGeneratePayload,
 	IPayrollQueryParams,
@@ -109,6 +109,7 @@ const generatePayroll = async (
 
 	// Calculate gross amount
 	let grossAmount: number;
+	let approvedHours: number | null = null;
 
 	if (employee.salaryType === "HOURLY") {
 		const hourlyRate = Number(employee.hourlyRate || 0);
@@ -131,6 +132,7 @@ const generatePayroll = async (
 			);
 		}
 
+		approvedHours = totalHours;
 		grossAmount = toCents(totalHours * hourlyRate);
 	} else {
 		grossAmount = toCents(Number(employee.salary || 0));
@@ -178,7 +180,17 @@ const generatePayroll = async (
 		action: AuditAction.GENERATE_PAYROLL,
 		entity: "Payroll",
 		entityId: payroll.id,
-		metadata: { employeeId, grossAmount, netAmount, deductions },
+		metadata: {
+			employeeName: payroll.employee.user.name,
+			employeeCode: payroll.employee.employeeCode,
+			periodStart: toAuditValue(payroll.periodStart),
+			periodEnd: toAuditValue(payroll.periodEnd),
+			salaryType: employee.salaryType,
+			approvedHours,
+			grossAmount,
+			deductions,
+			netAmount,
+		},
 	});
 
 	return formatPayroll(payroll);
@@ -349,7 +361,12 @@ const approvePayroll = async (id: string, user: IRequestUser) => {
 		action: AuditAction.APPROVE_PAYROLL,
 		entity: "Payroll",
 		entityId: id,
-		metadata: { employeeId: payroll.employeeId, netAmount: payroll.netAmount },
+		metadata: {
+			employeeName: updatedPayroll.employee.user.name,
+			periodStart: toAuditValue(payroll.periodStart),
+			periodEnd: toAuditValue(payroll.periodEnd),
+			netAmount: toAuditValue(payroll.netAmount),
+		},
 	});
 
 	return formatPayroll(updatedPayroll);
@@ -395,7 +412,12 @@ const rejectPayroll = async (id: string, user: IRequestUser) => {
 		action: AuditAction.REJECT_PAYROLL,
 		entity: "Payroll",
 		entityId: id,
-		metadata: { employeeId: payroll.employeeId, netAmount: payroll.netAmount },
+		metadata: {
+			employeeName: updatedPayroll.employee.user.name,
+			periodStart: toAuditValue(payroll.periodStart),
+			periodEnd: toAuditValue(payroll.periodEnd),
+			netAmount: toAuditValue(payroll.netAmount),
+		},
 	});
 
 	return formatPayroll(updatedPayroll);

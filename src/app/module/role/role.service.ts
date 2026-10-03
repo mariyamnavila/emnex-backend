@@ -2,7 +2,7 @@ import httpStatus from "http-status";
 import type { IRequestUser } from "../../interfaces";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/AppError";
-import { AuditAction, createAuditLog } from "../../utils/auditLog";
+import { AuditAction, createAuditLog, diffFields } from "../../utils/auditLog";
 import type {
 	IPermissionAssignPayload,
 	IRoleCreatePayload,
@@ -40,7 +40,7 @@ const createRole = async (payload: IRoleCreatePayload, user: IRequestUser) => {
 		action: AuditAction.CREATE_ROLE,
 		entity: "Role",
 		entityId: role.id,
-		metadata: { name },
+		metadata: { roleName: name, description: description ?? null },
 	});
 
 	return role;
@@ -167,7 +167,10 @@ const updateRole = async (
 		action: AuditAction.UPDATE_ROLE,
 		entity: "Role",
 		entityId: id,
-		metadata: { name, description },
+		metadata: {
+			roleName: updatedRole.name,
+			changes: diffFields(role, updatedRole, ["name", "description"]),
+		},
 	});
 
 	return updatedRole;
@@ -215,6 +218,7 @@ const deleteRole = async (id: string, user: IRequestUser) => {
 		action: AuditAction.DELETE_ROLE,
 		entity: "Role",
 		entityId: id,
+		metadata: { roleName: role.name },
 	});
 
 	return { message: "Role deleted successfully" };
@@ -334,6 +338,7 @@ const assignPermissions = async (
 		},
 		select: {
 			id: true,
+			name: true,
 		},
 	});
 
@@ -345,6 +350,13 @@ const assignPermissions = async (
 	}
 
 	await prisma.$transaction(async (tx) => {
+		const previous = await tx.rolePermission.findMany({
+			where: { roleId },
+			select: { permission: { select: { name: true } } },
+		});
+		const before = new Set(previous.map((rp) => rp.permission.name));
+		const after = new Set(permissions.map((p) => p.name));
+
 		await tx.rolePermission.deleteMany({
 			where: { roleId },
 		});
@@ -364,7 +376,12 @@ const assignPermissions = async (
 				action: AuditAction.ASSIGN_PERMISSIONS,
 				entity: "Role",
 				entityId: roleId,
-				metadata: { permissionIds },
+				metadata: {
+					roleName: role.name,
+					added: [...after].filter((name) => !before.has(name)).sort(),
+					removed: [...before].filter((name) => !after.has(name)).sort(),
+					total: after.size,
+				},
 			},
 		});
 	});

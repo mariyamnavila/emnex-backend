@@ -2,7 +2,7 @@ import httpStatus from "http-status";
 import type { IRequestUser } from "../../interfaces";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/AppError";
-import { AuditAction, createAuditLog } from "../../utils/auditLog";
+import { AuditAction, createAuditLog, diffFields, toAuditValue } from "../../utils/auditLog";
 import type {
 	IProjectCreatePayload,
 	IProjectQueryParams,
@@ -38,7 +38,12 @@ const createProject = async (
 		action: AuditAction.CREATE_PROJECT,
 		entity: "Project",
 		entityId: project.id,
-		metadata: { name },
+		metadata: {
+			projectName: name,
+			budget: toAuditValue(project.budget),
+			startDate: toAuditValue(project.startDate),
+			endDate: toAuditValue(project.endDate),
+		},
 	});
 
 	return project;
@@ -182,13 +187,28 @@ const updateProject = async (
 		},
 	});
 
-	createAuditLog({
-		user,
-		action: AuditAction.UPDATE_PROJECT,
-		entity: "Project",
-		entityId: id,
-		metadata: { name, description, budget, status },
-	});
+	const changes = diffFields(project, updatedProject, [
+		"name",
+		"description",
+		"startDate",
+		"endDate",
+		"budget",
+		"status",
+	]);
+	const changedFields = Object.keys(changes);
+
+	if (changedFields.length > 0) {
+		createAuditLog({
+			user,
+			action:
+				changedFields.length === 1 && changes.status
+					? AuditAction.CHANGE_PROJECT_STATUS
+					: AuditAction.UPDATE_PROJECT,
+			entity: "Project",
+			entityId: id,
+			metadata: { projectName: updatedProject.name, changes },
+		});
+	}
 
 	return updatedProject;
 };
@@ -234,6 +254,7 @@ const deleteProject = async (id: string, user: IRequestUser) => {
 		action: AuditAction.DELETE_PROJECT,
 		entity: "Project",
 		entityId: id,
+		metadata: { projectName: project.name },
 	});
 
 	return { message: "Project deleted successfully" };
