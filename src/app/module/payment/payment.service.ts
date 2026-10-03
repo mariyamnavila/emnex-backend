@@ -56,11 +56,20 @@ const createCheckoutSession = async (
 		where: { payrollId },
 	});
 
-	if (existingPayment) {
+	if (existingPayment?.status === "COMPLETED") {
 		throw new AppError(
 			httpStatus.CONFLICT,
-			"Payment already exists for this payroll",
+			"This payroll has already been paid",
 		);
+	}
+
+	// Retry after a cancelled/abandoned checkout: close the old session so it can't also be paid
+	if (existingPayment?.transactionId?.startsWith("cs_")) {
+		try {
+			await stripe.checkout.sessions.expire(existingPayment.transactionId);
+		} catch {
+			// already completed/expired sessions can't be expired — nothing to do
+		}
 	}
 
 	const appUrl = config.app_url;
@@ -75,6 +84,9 @@ const createCheckoutSession = async (
 			payrollId: payroll.id,
 			employeeId: payroll.employeeId,
 			organizationId: payroll.organizationId,
+		},
+		payment_intent_data: {
+			metadata: { payrollId: payroll.id, organizationId: payroll.organizationId },
 		},
 		line_items: [
 			{
@@ -91,14 +103,21 @@ const createCheckoutSession = async (
 		],
 	});
 
-	const payment = await prisma.payment.create({
-		data: {
+	const payment = await prisma.payment.upsert({
+		where: { payrollId },
+		create: {
 			payrollId,
 			employeeId: payroll.employeeId,
 			organizationId: user.organizationId,
 			amount: payroll.netAmount,
 			currency,
 			gateway: "STRIPE",
+			transactionId: session.id,
+			status: "PROCESSING",
+		},
+		update: {
+			amount: payroll.netAmount,
+			currency,
 			transactionId: session.id,
 			status: "PROCESSING",
 		},
@@ -121,6 +140,128 @@ const createCheckoutSession = async (
 	return {
 		checkoutUrl: session.url,
 		payment,
+	};
+};
+
+// Shared by webhook + verify; returns false if already completed, so calling twice is safe
+// Webhooks have no logged-in user, so their events are attributed to whoever started the payment
+const logPaymentEvent = async (
+	payment: { id: string; organizationId: string },
+	action: typeof AuditAction.PAYMENT_COMPLETED | typeof AuditAction.PAYMENT_FAILED,
+	metadata: Record<string, unknown>,
+	actor?: IRequestUser,
+) => {
+	const userId =
+		actor?.userId ??
+		(
+			await prisma.auditLog.findFirst({
+				where: {
+					entity: "Payment",
+					entityId: payment.id,
+					action: AuditAction.PAYMENT_INITIATED,
+				},
+				orderBy: { createdAt: "desc" },
+				select: { userId: true },
+			})
+		)?.userId;
+
+	if (!userId) return;
+
+	createAuditLog({
+		user: { userId, organizationId: payment.organizationId },
+		action,
+		entity: "Payment",
+		entityId: payment.id,
+		metadata,
+	});
+};
+
+const completePayment = async (
+	payrollId: string,
+	paymentIntentId: string,
+	source: "webhook" | "verify",
+	actor?: IRequestUser,
+) => {
+	const payment = await prisma.payment.findUnique({
+		where: { payrollId },
+	});
+
+	if (!payment) {
+		throw new AppError(httpStatus.NOT_FOUND, "Payment not found");
+	}
+
+	if (payment.status === "COMPLETED") {
+		return false;
+	}
+
+	await prisma.$transaction([
+		prisma.payment.update({
+			where: { id: payment.id },
+			data: { status: "COMPLETED", transactionId: paymentIntentId },
+		}),
+		prisma.payroll.update({
+			where: { id: payrollId },
+			data: { status: "PAID" },
+		}),
+	]);
+
+	await logPaymentEvent(
+		payment,
+		AuditAction.PAYMENT_COMPLETED,
+		{
+			payrollId,
+			amount: toNumber(payment.amount),
+			currency: payment.currency,
+			transactionId: paymentIntentId,
+			source,
+		},
+		actor,
+	);
+	return true;
+};
+
+// Success page asks Stripe directly, so payments complete even if the webhook can't reach us
+const verifyCheckoutSession = async (sessionId: string, user: IRequestUser) => {
+	let session: Stripe.Checkout.Session;
+	try {
+		session = await stripe.checkout.sessions.retrieve(sessionId);
+	} catch {
+		throw new AppError(httpStatus.NOT_FOUND, "Checkout session not found");
+	}
+
+	const payrollId = session.metadata?.payrollId;
+	if (!payrollId || session.metadata?.organizationId !== user.organizationId) {
+		throw new AppError(httpStatus.NOT_FOUND, "Checkout session not found");
+	}
+
+	const isPaid = session.payment_status === "paid";
+	if (isPaid) {
+		await completePayment(payrollId, session.payment_intent as string, "verify", user);
+	}
+
+	const payment = await prisma.payment.findUnique({
+		where: { payrollId },
+		include: {
+			employee: { include: { user: { omit: { password: true } } } },
+			payroll: true,
+		},
+	});
+
+	if (!payment) {
+		throw new AppError(httpStatus.NOT_FOUND, "Payment not found");
+	}
+
+	return {
+		status: isPaid ? "paid" : session.status === "expired" ? "expired" : "unpaid",
+		payment: {
+			...formatPayment(payment),
+			payroll: {
+				...payment.payroll,
+				grossAmount: toNumber(payment.payroll.grossAmount),
+				deductions: toNumber(payment.payroll.deductions),
+				netAmount: toNumber(payment.payroll.netAmount),
+			},
+		},
 	};
 };
 
@@ -155,32 +296,7 @@ const handleWebhook = async (rawBody: string | Buffer, signature: string) => {
 			);
 		}
 
-		const payment = await prisma.payment.findUnique({
-			where: { payrollId },
-		});
-
-		if (!payment) {
-			throw new AppError(httpStatus.NOT_FOUND, "Payment not found");
-		}
-
-		// Idempotency check - skip if already completed
-		if (payment.status === "COMPLETED") {
-			return { received: true };
-		}
-
-		await prisma.$transaction([
-			prisma.payment.update({
-				where: { id: payment.id },
-				data: {
-					status: "COMPLETED",
-					transactionId: session.payment_intent as string,
-				},
-			}),
-			prisma.payroll.update({
-				where: { id: payrollId },
-				data: { status: "PAID" },
-			}),
-		]);
+		await completePayment(payrollId, session.payment_intent as string, "webhook");
 	}
 
 	if (event.type === "checkout.session.async_payment_failed") {
@@ -204,14 +320,21 @@ const handleWebhook = async (rawBody: string | Buffer, signature: string) => {
 			where: { id: payment.id },
 			data: { status: "FAILED" },
 		});
+		await logPaymentEvent(payment, AuditAction.PAYMENT_FAILED, {
+			payrollId,
+			reason: "async payment failed",
+			source: "webhook",
+		});
 	}
 
 	if (event.type === "payment_intent.payment_failed") {
 		const paymentIntent = event.data.object as Stripe.PaymentIntent;
 
-		const payment = await prisma.payment.findFirst({
-			where: { transactionId: paymentIntent.id },
-		});
+		// Until completion the record holds the checkout session id, so find it via metadata
+		const payrollId = paymentIntent.metadata?.payrollId;
+		const payment = payrollId
+			? await prisma.payment.findUnique({ where: { payrollId } })
+			: await prisma.payment.findFirst({ where: { transactionId: paymentIntent.id } });
 
 		if (
 			payment &&
@@ -221,6 +344,11 @@ const handleWebhook = async (rawBody: string | Buffer, signature: string) => {
 			await prisma.payment.update({
 				where: { id: payment.id },
 				data: { status: "FAILED" },
+			});
+			await logPaymentEvent(payment, AuditAction.PAYMENT_FAILED, {
+				payrollId: payment.payrollId,
+				reason: paymentIntent.last_payment_error?.message ?? "payment failed",
+				source: "webhook",
 			});
 		}
 	}
@@ -323,6 +451,7 @@ const getMyPayments = async (user: IRequestUser) => {
 
 export const PaymentService = {
 	createCheckoutSession,
+	verifyCheckoutSession,
 	handleWebhook,
 	getAllPayments,
 	getPaymentById,

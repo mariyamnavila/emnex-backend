@@ -32,6 +32,13 @@ router.get(
 );
 
 router.get(
+	"/verify/:sessionId",
+	auth(),
+	checkPermission("payment.view"),
+	PaymentController.verifyCheckoutSession,
+);
+
+router.get(
 	"/:id",
 	auth(),
 	checkPermission("payment.view"),

@@ -20,6 +20,23 @@ const createCheckoutSession = catchAsync(
 	},
 );
 
+const verifyCheckoutSession = catchAsync(
+	async (req: Request, res: Response, _next: NextFunction) => {
+		const user = req.user as IRequestUser;
+		const result = await PaymentService.verifyCheckoutSession(
+			req.params.sessionId as string,
+			user,
+		);
+
+		sendResponse(res, {
+			statusCode: httpStatus.OK,
+			success: true,
+			message: "Checkout session verified",
+			data: result,
+		});
+	},
+);
+
 const handleWebhook = catchAsync(
 	async (req: Request, res: Response, _next: NextFunction) => {
 		const signature = req.headers["stripe-signature"];
@@ -92,6 +109,7 @@ const getMyPayments = catchAsync(
 
 export const PaymentController = {
 	createCheckoutSession,
+	verifyCheckoutSession,
 	handleWebhook,
 	getAllPayments,
 	getPaymentById,
