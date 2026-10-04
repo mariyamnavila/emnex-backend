@@ -159,9 +159,17 @@ const register = async (payload: IRegisterPayload) => {
 		tokenVersion: 0,
 	});
 
+	// Same user shape as login, so the client can route by role
 	return {
 		organization: result.organization,
-		user: result.user,
+		user: {
+			id: result.user.id,
+			name: result.user.name,
+			email: result.user.email,
+			role: "ADMIN",
+			organizationId: result.user.organizationId,
+			mustChangePassword: result.user.mustChangePassword,
+		},
 		accessToken,
 		refreshToken,
 	};
