@@ -7,24 +7,32 @@ import { sendResponse } from "../../utils/sendResponse";
 import type { IRequestUser } from "./auth.interface";
 import { AuthService } from "./auth.service";
 
+// accessToken lives 24 h, refreshToken 7 days; both httpOnly
+const setAuthCookies = (
+	res: Response,
+	tokens: { accessToken: string; refreshToken: string },
+) => {
+	const options = {
+		httpOnly: true,
+		secure: config.node_env === "production",
+		sameSite: "none" as const,
+	};
+	res.cookie("accessToken", tokens.accessToken, {
+		...options,
+		maxAge: 1000 * 60 * 60 * 24,
+	});
+	res.cookie("refreshToken", tokens.refreshToken, {
+		...options,
+		maxAge: 1000 * 60 * 60 * 24 * 7,
+	});
+};
+
 const register = catchAsync(async (req: Request, res: Response) => {
 	const payload = req.body;
 
 	const result = await AuthService.register(payload);
 
-	res.cookie("accessToken", result.accessToken, {
-		httpOnly: true,
-		secure: config.node_env === "production",
-		sameSite: "none",
-		maxAge: 1000 * 60 * 60 * 24, // 24 hours
-	});
-
-	res.cookie("refreshToken", result.refreshToken, {
-		httpOnly: true,
-		secure: config.node_env === "production",
-		sameSite: "none",
-		maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-	});
+	setAuthCookies(res, result);
 
 	sendResponse(res, {
 		statusCode: httpStatus.CREATED,
@@ -44,19 +52,7 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
 
 	const result = await AuthService.loginUser(payload);
 
-	res.cookie("accessToken", result.accessToken, {
-		httpOnly: true,
-		secure: config.node_env === "production",
-		sameSite: "none",
-		maxAge: 1000 * 60 * 60 * 24,
-	});
-
-	res.cookie("refreshToken", result.refreshToken, {
-		httpOnly: true,
-		secure: config.node_env === "production",
-		sameSite: "none",
-		maxAge: 1000 * 60 * 60 * 24 * 7,
-	});
+	setAuthCookies(res, result);
 
 	sendResponse(res, {
 		statusCode: httpStatus.OK,
@@ -90,19 +86,7 @@ const refreshToken = catchAsync(async (req: Request, res: Response) => {
 
 	const result = await AuthService.refreshToken(req.cookies.refreshToken);
 
-	res.cookie("accessToken", result.accessToken, {
-		httpOnly: true,
-		secure: config.node_env === "production",
-		sameSite: "none",
-		maxAge: 1000 * 60 * 60 * 24,
-	});
-
-	res.cookie("refreshToken", result.refreshToken, {
-		httpOnly: true,
-		secure: config.node_env === "production",
-		sameSite: "none",
-		maxAge: 1000 * 60 * 60 * 24 * 7,
-	});
+	setAuthCookies(res, result);
 
 	sendResponse(res, {
 		statusCode: httpStatus.OK,
@@ -124,6 +108,7 @@ const changePassword = catchAsync(async (req: Request, res: Response) => {
 		currentPassword,
 		newPassword,
 	);
+	setAuthCookies(res, result);
 
 	sendResponse(res, {
 		statusCode: httpStatus.OK,
@@ -168,19 +153,7 @@ const googleLogin = catchAsync(async (req: Request, res: Response) => {
 
 	const result = await AuthService.googleLogin({ idToken });
 
-	res.cookie("accessToken", result.accessToken, {
-		httpOnly: true,
-		secure: config.node_env === "production",
-		sameSite: "none",
-		maxAge: 1000 * 60 * 60 * 24,
-	});
-
-	res.cookie("refreshToken", result.refreshToken, {
-		httpOnly: true,
-		secure: config.node_env === "production",
-		sameSite: "none",
-		maxAge: 1000 * 60 * 60 * 24 * 7,
-	});
+	setAuthCookies(res, result);
 
 	sendResponse(res, {
 		statusCode: httpStatus.OK,

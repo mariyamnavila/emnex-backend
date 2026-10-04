@@ -15,6 +15,30 @@ import type {
 	IRequestUser,
 } from "./auth.interface";
 
+
+interface TokenPayload {
+	userId: string;
+	name: string;
+	email: string;
+	role: string;
+	organizationId: string;
+	tokenVersion: number;
+}
+
+// Access + refresh token pair for a signed-in session
+const issueTokens = (payload: TokenPayload) => ({
+	accessToken: jwtUtils.createToken(
+		payload,
+		config.jwt_access_secret,
+		config.jwt_access_expires_in as SignOptions,
+	),
+	refreshToken: jwtUtils.createToken(
+		payload,
+		config.jwt_refresh_secret,
+		config.jwt_refresh_expires_in as SignOptions,
+	),
+});
+
 const register = async (payload: IRegisterPayload) => {
 	const { organizationName, organizationSlug, name, email, password } = payload;
 
@@ -126,26 +150,14 @@ const register = async (payload: IRegisterPayload) => {
 		};
 	});
 
-	const jwtPayload = {
+	const { accessToken, refreshToken } = issueTokens({
 		userId: result.user.id,
 		name: result.user.name,
 		email: result.user.email,
 		role: "ADMIN",
 		organizationId: result.organization.id,
 		tokenVersion: 0,
-	};
-
-	const accessToken = jwtUtils.createToken(
-		jwtPayload,
-		config.jwt_access_secret,
-		config.jwt_access_expires_in as SignOptions,
-	);
-
-	const refreshToken = jwtUtils.createToken(
-		jwtPayload,
-		config.jwt_refresh_secret,
-		config.jwt_refresh_expires_in as SignOptions,
-	);
+	});
 
 	return {
 		organization: result.organization,
@@ -195,26 +207,14 @@ const loginUser = async (payload: ILoginPayload) => {
 		throw new AppError(httpStatus.UNAUTHORIZED, "Invalid credentials");
 	}
 
-	const jwtPayload = {
+	const { accessToken, refreshToken } = issueTokens({
 		userId: user.id,
 		name: user.name,
 		email: user.email,
 		role: user.role.name,
 		organizationId: user.organizationId,
 		tokenVersion: user.tokenVersion,
-	};
-
-	const accessToken = jwtUtils.createToken(
-		jwtPayload,
-		config.jwt_access_secret,
-		config.jwt_access_expires_in as SignOptions,
-	);
-
-	const refreshToken = jwtUtils.createToken(
-		jwtPayload,
-		config.jwt_refresh_secret,
-		config.jwt_refresh_expires_in as SignOptions,
-	);
+	});
 
 	createAuditLog({
 		user: { userId: user.id, organizationId: user.organizationId },
@@ -302,26 +302,14 @@ const refreshToken = async (token: string) => {
 		);
 	}
 
-	const jwtPayload = {
+	const { accessToken, refreshToken: newRefreshToken } = issueTokens({
 		userId: user.id,
 		name: user.name,
 		email: user.email,
 		role: user.role.name,
 		organizationId: user.organizationId,
 		tokenVersion: user.tokenVersion,
-	};
-
-	const accessToken = jwtUtils.createToken(
-		jwtPayload,
-		config.jwt_access_secret,
-		config.jwt_access_expires_in as SignOptions,
-	);
-
-	const newRefreshToken = jwtUtils.createToken(
-		jwtPayload,
-		config.jwt_refresh_secret,
-		config.jwt_refresh_expires_in as SignOptions,
-	);
+	});
 
 	return { accessToken, refreshToken: newRefreshToken };
 };
@@ -361,13 +349,14 @@ const changePassword = async (
 	);
 
 	// Increment tokenVersion to invalidate all existing tokens
-	await prisma.user.update({
+	const updated = await prisma.user.update({
 		where: { id: user.userId },
 		data: {
 			password: hashedNewPassword,
 			mustChangePassword: false,
 			tokenVersion: { increment: 1 },
 		},
+		include: { role: true },
 	});
 
 	createAuditLog({
@@ -377,7 +366,17 @@ const changePassword = async (
 		entityId: user.userId,
 	});
 
-	return { message: "Password changed successfully" };
+	// Other sessions are signed out; this one gets fresh tokens so it stays signed in
+	const tokens = issueTokens({
+		userId: updated.id,
+		name: updated.name,
+		email: updated.email,
+		role: updated.role.name,
+		organizationId: updated.organizationId,
+		tokenVersion: updated.tokenVersion,
+	});
+
+	return { message: "Password changed successfully", ...tokens };
 };
 
 const uploadAvatar = async (user: IRequestUser, file: Express.Multer.File) => {
@@ -479,26 +478,14 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
 		);
 	}
 
-	const jwtPayload = {
+	const { accessToken, refreshToken } = issueTokens({
 		userId: user.id,
 		name: user.name,
 		email: user.email,
 		role: user.role.name,
 		organizationId: user.organizationId,
 		tokenVersion: user.tokenVersion,
-	};
-
-	const accessToken = jwtUtils.createToken(
-		jwtPayload,
-		config.jwt_access_secret,
-		config.jwt_access_expires_in as SignOptions,
-	);
-
-	const refreshToken = jwtUtils.createToken(
-		jwtPayload,
-		config.jwt_refresh_secret,
-		config.jwt_refresh_expires_in as SignOptions,
-	);
+	});
 
 	createAuditLog({
 		user: { userId: user.id, organizationId: user.organizationId },

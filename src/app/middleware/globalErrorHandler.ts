@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status";
+import multer from "multer";
 import { Prisma } from "../../generated/prisma/client";
 import { AppError } from "../utils/AppError";
 
@@ -39,6 +40,13 @@ export const globalErrorHandler = async (
 	} else if (err instanceof Prisma.PrismaClientUnknownRequestError) {
 		statusCode = httpStatus.INTERNAL_SERVER_ERROR;
 		errorMessage = "Error occurred during query execution";
+	} else if (err instanceof multer.MulterError) {
+		// Upload problems are the client's to fix (size, field name, file count)
+		statusCode = httpStatus.BAD_REQUEST;
+		errorMessage =
+			err.code === "LIMIT_FILE_SIZE"
+				? "The file is too large (5 MB max)"
+				: err.message;
 	} else if (err instanceof AppError) {
 		statusCode = err.statusCode;
 		errorMessage = err.message;
