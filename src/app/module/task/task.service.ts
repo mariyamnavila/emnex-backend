@@ -1,11 +1,13 @@
 import httpStatus from "http-status";
 import type { IRequestUser } from "../../interfaces";
 import { prisma } from "../../lib/prisma";
+import { checkUserPermission } from "../../middleware/checkPermission";
 import { AppError } from "../../utils/AppError";
 import { AuditAction, createAuditLog, toAuditValue } from "../../utils/auditLog";
 import {
 	validateEmployeeCanAssign,
 	validateEmployeeCanViewTasks,
+	validateEmployeeCanWork,
 } from "../../utils/employeeStatus";
 import type {
 	ITaskAssignPayload,
@@ -378,6 +380,9 @@ const assignTask = async (
 	return updatedTask;
 };
 
+// Where an assignee may move their own task: start (or restart) it, and submit it
+const ASSIGNEE_TARGETS = ["IN_PROGRESS", "SUBMITTED"];
+
 const validTaskTransitions: Record<string, string[]> = {
 	TODO: ["IN_PROGRESS"],
 	IN_PROGRESS: ["SUBMITTED"],
@@ -424,6 +429,32 @@ const updateTaskStatus = async (
 			httpStatus.BAD_REQUEST,
 			`Cannot transition from ${task.status} to ${status}`,
 		);
+	}
+
+	// The assignee moves their own work forward; reviewing it is someone else's job
+	const self = await prisma.employee.findUnique({
+		where: { userId: user.userId },
+	});
+	
+	if (self && self.id === task.employeeId) {
+		if (!ASSIGNEE_TARGETS.includes(status)) {
+			throw new AppError(
+				httpStatus.FORBIDDEN,
+				"You can't approve, reject or complete your own task",
+			);
+		}
+		validateEmployeeCanWork(self.status);
+	} else {
+		const [canAssign, canReview] = await Promise.all([
+			checkUserPermission(user.userId, "task.assign"),
+			checkUserPermission(user.userId, "submission.approve"),
+		]);
+		if (!canAssign && !canReview) {
+			throw new AppError(
+				httpStatus.FORBIDDEN,
+				"You can only change the status of tasks assigned to you",
+			);
+		}
 	}
 
 	const updatedTask = await prisma.task.update({
