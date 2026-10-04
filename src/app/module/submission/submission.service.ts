@@ -305,7 +305,7 @@ const approveSubmission = async (id: string, user: IRequestUser) => {
 		);
 	}
 
-	// Transaction: approve submission + update task status
+	// Reviewing a work log never changes the task's own status
 	const result = await prisma.$transaction(async (tx) => {
 		const updatedSubmission = await tx.workSubmission.update({
 			where: { id },
@@ -322,12 +322,6 @@ const approveSubmission = async (id: string, user: IRequestUser) => {
 					},
 				},
 			},
-		});
-
-		// Update task status to SUBMITTED
-		await tx.task.update({
-			where: { id: submission.taskId },
-			data: { status: "SUBMITTED" },
 		});
 
 		await tx.auditLog.create({
@@ -403,12 +397,6 @@ const rejectSubmission = async (
 					},
 				},
 			},
-		});
-
-		// Update task status to REJECTED
-		await tx.task.update({
-			where: { id: submission.taskId },
-			data: { status: "REJECTED" },
 		});
 
 		await tx.auditLog.create({
