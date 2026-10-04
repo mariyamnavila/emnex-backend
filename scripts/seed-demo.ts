@@ -427,7 +427,7 @@ async function main() {
 				},
 			});
 
-			// 10. Payroll (one generated for employee)
+			// 10. Payroll: Jan approved (ready to pay), Feb generated (to review), manager's Jan paid
 			const payroll1 = await tx.payroll.create({
 				data: {
 					organizationId: org.id,
@@ -452,7 +452,7 @@ async function main() {
 					status: "GENERATED",
 				},
 			});
-			await tx.payroll.create({
+			const paidPayroll = await tx.payroll.create({
 				data: {
 					organizationId: org.id,
 					employeeId: managerEmployee.id,
@@ -465,13 +465,13 @@ async function main() {
 				},
 			});
 
-			// 11. Payment for the paid payroll
+			// 11. Payment for the paid payroll (an APPROVED payroll must not have a completed payment)
 			await tx.payment.create({
 				data: {
 					organizationId: org.id,
-					payrollId: payroll1.id,
-					employeeId: employee.id,
-					amount: 3600,
+					payrollId: paidPayroll.id,
+					employeeId: managerEmployee.id,
+					amount: 5400,
 					currency: "USD",
 					gateway: "STRIPE",
 					status: "COMPLETED",

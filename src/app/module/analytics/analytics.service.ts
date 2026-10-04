@@ -42,7 +42,7 @@ const getDashboard = async (user: IRequestUser) => {
 				},
 			}),
 			prisma.payroll.aggregate({
-				where: { organizationId: orgId },
+				where: { organizationId: orgId, status: { not: "REJECTED" } },
 				_sum: { netAmount: true },
 			}),
 			prisma.payment.count({
@@ -141,7 +141,7 @@ const getDashboard = async (user: IRequestUser) => {
 				where: { organizationId: orgId, status: "APPROVED" },
 			}),
 			prisma.payroll.aggregate({
-				where: { organizationId: orgId },
+				where: { organizationId: orgId, status: { not: "REJECTED" } },
 				_sum: { netAmount: true },
 			}),
 			prisma.payment.count({
@@ -300,6 +300,8 @@ const getProjectAnalytics = async (user: IRequestUser) => {
 
 const getPayrollAnalytics = async (user: IRequestUser) => {
 	const orgId = user.organizationId;
+	// Rejected payroll was never owed, so it stays out of totals and the trend
+	const counted = { organizationId: orgId, status: { not: "REJECTED" as const } };
 
 	const [statusCounts, totalAmounts, monthlyTrend] = await Promise.all([
 		prisma.payroll.groupBy({
@@ -309,13 +311,13 @@ const getPayrollAnalytics = async (user: IRequestUser) => {
 			_sum: { netAmount: true },
 		}),
 		prisma.payroll.aggregate({
-			where: { organizationId: orgId },
+			where: counted,
 			_sum: { grossAmount: true, deductions: true, netAmount: true },
 			_count: true,
 		}),
 		prisma.payroll.groupBy({
 			by: ["periodStart"],
-			where: { organizationId: orgId },
+			where: counted,
 			_sum: { netAmount: true },
 			_count: true,
 			orderBy: { periodStart: "desc" },
