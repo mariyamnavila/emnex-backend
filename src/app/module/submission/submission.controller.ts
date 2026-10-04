@@ -20,7 +20,7 @@ const createSubmission = catchAsync(async (req: Request, res: Response) => {
 
 const getAllSubmissions = catchAsync(async (req: Request, res: Response) => {
 	const user = req.user as IRequestUser;
-	const { page, limit, status, taskId, employeeId } = req.query;
+	const { page, limit, status, taskId, employeeId, sortOrder } = req.query;
 
 	const result = await SubmissionService.getAllSubmissions(user, {
 		page: page ? Number(page) : undefined,
@@ -28,6 +28,7 @@ const getAllSubmissions = catchAsync(async (req: Request, res: Response) => {
 		status: status as string,
 		taskId: taskId as string,
 		employeeId: employeeId as string,
+		sortOrder: sortOrder === "asc" ? "asc" : "desc",
 	});
 
 	sendResponse(res, {

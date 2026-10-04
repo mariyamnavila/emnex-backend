@@ -64,30 +64,49 @@ const getDashboard = async (user: IRequestUser) => {
 	}
 
 	if (role === "HR_MANAGER") {
+		const now = new Date();
+		const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+		const orgSubmissions = { task: { project: { organizationId: orgId } } };
+
 		const [
 			totalEmployees,
 			activeEmployees,
 			totalDepartments,
 			newEmployeesThisMonth,
 			employeeByStatus,
+			pending,
+			approvedThisMonth,
 		] = await Promise.all([
 			prisma.employee.count({ where: { organizationId: orgId } }),
 			prisma.employee.count({
 				where: { organizationId: orgId, status: "ACTIVE" },
 			}),
-			prisma.department.count({ where: { organizationId: orgId } }),
+			prisma.department.count({
+				where: { organizationId: orgId, deletedAt: null },
+			}),
 			prisma.employee.count({
 				where: {
 					organizationId: orgId,
-					createdAt: {
-						gte: new Date(new Date().setDate(1)),
-					},
+					createdAt: { gte: monthStart },
 				},
 			}),
 			prisma.employee.groupBy({
 				by: ["status"],
 				where: { organizationId: orgId },
 				_count: true,
+			}),
+			prisma.workSubmission.aggregate({
+				where: { ...orgSubmissions, status: "PENDING" },
+				_count: true,
+				_sum: { hoursWorked: true },
+			}),
+			prisma.workSubmission.aggregate({
+				where: {
+					...orgSubmissions,
+					status: "APPROVED",
+					reviewedAt: { gte: monthStart },
+				},
+				_sum: { hoursWorked: true },
 			}),
 		]);
 
@@ -97,6 +116,9 @@ const getDashboard = async (user: IRequestUser) => {
 			totalDepartments,
 			newEmployeesThisMonth,
 			employeeByStatus,
+			pendingSubmissions: pending._count,
+			pendingHours: toNumber(pending._sum.hoursWorked ?? 0),
+			approvedHoursThisMonth: toNumber(approvedThisMonth._sum.hoursWorked ?? 0),
 		};
 	}
 
@@ -225,7 +247,7 @@ const getEmployeeAnalytics = async (user: IRequestUser) => {
 				take: 5,
 			}),
 			prisma.department.findMany({
-				where: { organizationId: orgId },
+				where: { organizationId: orgId, deletedAt: null },
 				include: { _count: { select: { employees: true } } },
 			}),
 		]);

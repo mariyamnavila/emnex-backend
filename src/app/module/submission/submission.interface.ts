@@ -21,4 +21,5 @@ export interface ISubmissionQueryParams {
 	status?: string;
 	taskId?: string;
 	employeeId?: string;
+	sortOrder?: "asc" | "desc";
 }

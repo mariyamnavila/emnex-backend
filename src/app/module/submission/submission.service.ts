@@ -113,7 +113,14 @@ const getAllSubmissions = async (
 	user: IRequestUser,
 	query: ISubmissionQueryParams,
 ) => {
-	const { page = 1, limit = 10, status, taskId, employeeId } = query;
+	const {
+		page = 1,
+		limit = 10,
+		status,
+		taskId,
+		employeeId,
+		sortOrder = "desc",
+	} = query;
 
 	const where: Record<string, unknown> = {
 		task: {
@@ -139,7 +146,7 @@ const getAllSubmissions = async (
 		prisma.workSubmission.findMany({
 			where,
 			include: {
-				task: true,
+				task: { include: { project: { select: { id: true, name: true } } } },
 				employee: {
 					include: {
 						user: { omit: { password: true } },
@@ -148,7 +155,7 @@ const getAllSubmissions = async (
 			},
 			skip,
 			take: limit,
-			orderBy: { createdAt: "desc" },
+			orderBy: { createdAt: sortOrder },
 		}),
 		prisma.workSubmission.count({ where }),
 	]);
