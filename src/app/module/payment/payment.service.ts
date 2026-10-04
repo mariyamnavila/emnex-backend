@@ -55,6 +55,11 @@ const createCheckoutSession = async (
 		);
 	}
 
+	// Same rule as approving: nobody pays their own payroll, whatever their permissions
+	if (payroll.employee.userId === user.userId) {
+		throw new AppError(httpStatus.FORBIDDEN, "You can't pay your own payroll");
+	}
+
 	if (existingPayment?.status === "COMPLETED") {
 		throw new AppError(
 			httpStatus.CONFLICT,
