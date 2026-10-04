@@ -8,13 +8,13 @@ import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/AppError";
 import { AuditAction, createAuditLog } from "../../utils/auditLog";
 import { jwtUtils } from "../../utils/jwt";
+import type { IAccount } from "../../interfaces";
 import type {
 	IGoogleLoginPayload,
 	ILoginPayload,
 	IRegisterPayload,
 	IRequestUser,
 } from "./auth.interface";
-
 
 interface TokenPayload {
 	userId: string;
@@ -246,37 +246,13 @@ const loginUser = async (payload: ILoginPayload) => {
 	};
 };
 
-const getMe = async (user: IRequestUser) => {
-	const userRecord = await prisma.user.findUnique({
-		where: { id: user.userId },
-		omit: { password: true },
-		include: {
-			role: {
-				include: {
-					permissions: {
-						include: {
-							permission: true,
-						},
-					},
-				},
-			},
-			organization: true,
-		},
-	});
-
-	if (!userRecord) {
-		throw new AppError(httpStatus.NOT_FOUND, "User not found");
-	}
-
-	const permissions =
-		userRecord.role?.permissions?.map((rp) => rp.permission.name) ?? [];
-
-	// Strip the nested permission rows, return flat string array
-	const { role, ...rest } = userRecord;
+// Shapes the account auth() already loaded — no extra query
+const getMe = (account: IAccount) => {
+	const { password: _password, role, ...rest } = account;
 	return {
 		...rest,
 		role: { id: role.id, name: role.name, description: role.description },
-		permissions,
+		permissions: role.permissions.map((rp) => rp.permission.name),
 	};
 };
 
@@ -324,14 +300,13 @@ const refreshToken = async (token: string) => {
 
 const changePassword = async (
 	user: IRequestUser,
+	account: IAccount,
 	currentPassword: string,
 	newPassword: string,
 ) => {
-	const userRecord = await prisma.user.findUnique({
-		where: { id: user.userId },
-	});
+	const userRecord = account;
 
-	if (!userRecord || !userRecord?.password) {
+	if (!userRecord.password) {
 		throw new AppError(httpStatus.NOT_FOUND, "User not found");
 	}
 
@@ -348,7 +323,10 @@ const changePassword = async (
 	);
 
 	if (!isCurrentPasswordValid) {
-		throw new AppError(httpStatus.BAD_REQUEST, "Current password is incorrect");
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			"Current password is incorrect",
+		);
 	}
 
 	const hashedNewPassword = await bcrypt.hash(
@@ -364,7 +342,7 @@ const changePassword = async (
 			mustChangePassword: false,
 			tokenVersion: { increment: 1 },
 		},
-		include: { role: true },
+		select: { id: true, name: true, email: true, organizationId: true, tokenVersion: true },
 	});
 
 	createAuditLog({
@@ -379,7 +357,7 @@ const changePassword = async (
 		userId: updated.id,
 		name: updated.name,
 		email: updated.email,
-		role: updated.role.name,
+		role: account.role.name,
 		organizationId: updated.organizationId,
 		tokenVersion: updated.tokenVersion,
 	});

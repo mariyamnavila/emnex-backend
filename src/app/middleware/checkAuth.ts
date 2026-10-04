@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status";
 import config from "../config";
+import { accountInclude } from "../interfaces";
 import { prisma } from "../lib/prisma";
 import { AppError } from "../utils/AppError";
 import { catchAsync } from "../utils/catchAsync";
@@ -30,28 +31,25 @@ export const auth = () => {
 			);
 		}
 
-		const { userId } = verifiedToken.data;
+		const { userId, tokenVersion } = verifiedToken.data;
 
 		const user = await prisma.user.findUnique({
 			where: { id: userId },
-			include: {
-				role: {
-					include: {
-						permissions: {
-							include: {
-								permission: true,
-							},
-						},
-					},
-				},
-				employee: true,
-			},
+			include: accountInclude,
 		});
 
 		if (!user) {
 			throw new AppError(
 				httpStatus.UNAUTHORIZED,
 				"User not found. Please log in again.",
+			);
+		}
+
+		// A password change bumps tokenVersion: older tokens stop working at once
+		if (tokenVersion !== undefined && tokenVersion !== user.tokenVersion) {
+			throw new AppError(
+				httpStatus.UNAUTHORIZED,
+				"Your session has ended. Please log in again.",
 			);
 		}
 
@@ -88,6 +86,7 @@ export const auth = () => {
 		const permissions =
 			user.role?.permissions?.map((rp) => rp.permission.name) ?? [];
 
+		req.account = user;
 		req.user = {
 			email: user.email,
 			name: user.name,

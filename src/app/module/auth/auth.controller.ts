@@ -4,6 +4,7 @@ import config from "../../config";
 import { AppError } from "../../utils/AppError";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
+import type { IAccount } from "../../interfaces";
 import type { IRequestUser } from "./auth.interface";
 import { AuthService } from "./auth.service";
 
@@ -67,9 +68,7 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getMe = catchAsync(async (req: Request, res: Response) => {
-	const user = req.user as IRequestUser;
-
-	const result = await AuthService.getMe(user);
+	const result = AuthService.getMe(req.account as IAccount);
 
 	sendResponse(res, {
 		statusCode: httpStatus.OK,
@@ -105,6 +104,7 @@ const changePassword = catchAsync(async (req: Request, res: Response) => {
 
 	const result = await AuthService.changePassword(
 		user,
+		req.account as IAccount,
 		currentPassword,
 		newPassword,
 	);
