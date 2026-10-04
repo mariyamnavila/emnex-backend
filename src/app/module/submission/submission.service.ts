@@ -439,7 +439,7 @@ const getMySubmissions = async (user: IRequestUser) => {
 	const submissions = await prisma.workSubmission.findMany({
 		where: { employeeId: employee.id },
 		include: {
-			task: true,
+			task: { include: { project: { select: { id: true, name: true } } } },
 		},
 		orderBy: { createdAt: "desc" },
 	});
