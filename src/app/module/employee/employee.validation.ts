@@ -19,7 +19,7 @@ const CreateEmployeeZodSchema = z.object({
 });
 
 const UpdateEmployeeZodSchema = z.object({
-	departmentId: z.string().uuid("Invalid department ID").optional(),
+	departmentId: z.uuid("Invalid department ID").optional(),
 	jobTitle: z
 		.string()
 		.min(2, "Job title must be at least 2 characters")
