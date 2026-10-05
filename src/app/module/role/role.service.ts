@@ -27,13 +27,28 @@ const createRole = async (payload: IRoleCreatePayload, user: IRequestUser) => {
 		);
 	}
 
-	const role = await prisma.role.create({
-		data: {
-			name: name,
-			description: description,
-			organizationId: user.organizationId,
-		},
+	// A soft-deleted role still holds the (organizationId, name) unique slot, so
+	// recreating that name would hit the DB unique constraint. Revive the deleted
+	// row as a fresh role (drop its old permissions) instead of inserting.
+	const softDeletedRole = await prisma.role.findFirst({
+		where: { name, organizationId: user.organizationId, deletedAt: { not: null } },
 	});
+
+	const role = softDeletedRole
+		? await prisma.$transaction(async (tx) => {
+				await tx.rolePermission.deleteMany({ where: { roleId: softDeletedRole.id } });
+				return tx.role.update({
+					where: { id: softDeletedRole.id },
+					data: { description: description ?? null, deletedAt: null, createdAt: new Date() },
+				});
+			})
+		: await prisma.role.create({
+				data: {
+					name: name,
+					description: description,
+					organizationId: user.organizationId,
+				},
+			});
 
 	createAuditLog({
 		user,

@@ -30,13 +30,25 @@ const createDepartment = async (
 		);
 	}
 
-	const department = await prisma.department.create({
-		data: {
-			name,
-			description,
-			organizationId: user.organizationId,
-		},
+	// A soft-deleted department still holds the (organizationId, name) unique
+	// slot, so recreating that name would hit the DB unique constraint. Revive
+	// the deleted row instead (fresh, with no employees) rather than inserting.
+	const softDeletedDepartment = await prisma.department.findFirst({
+		where: { name, organizationId: user.organizationId, deletedAt: { not: null } },
 	});
+
+	const department = softDeletedDepartment
+		? await prisma.department.update({
+				where: { id: softDeletedDepartment.id },
+				data: { description: description ?? null, deletedAt: null, createdAt: new Date() },
+			})
+		: await prisma.department.create({
+				data: {
+					name,
+					description,
+					organizationId: user.organizationId,
+				},
+			});
 
 	createAuditLog({
 		user,
