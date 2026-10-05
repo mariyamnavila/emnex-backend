@@ -432,6 +432,14 @@ const rejectSubmission = async (
 		);
 	}
 
+	// Prevent self-rejection (mirrors the self-approval guard)
+	const reviewer = await prisma.employee.findUnique({
+		where: { userId: user.userId },
+	});
+	if (reviewer && submission.employeeId === reviewer.id) {
+		throw new AppError(httpStatus.FORBIDDEN, "Cannot reject your own submission");
+	}
+
 	// Validate status transition
 	const allowed = validSubmissionTransitions[submission.status];
 	if (!allowed || !allowed.includes("REJECTED")) {

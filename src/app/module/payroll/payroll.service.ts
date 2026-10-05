@@ -27,7 +27,9 @@ const generatePayroll = async (
 	payload: IPayrollGeneratePayload,
 	user: IRequestUser,
 ) => {
-	const { employeeId, periodStart, periodEnd, deductions = 0 } = payload;
+	const { employeeId, periodStart, periodEnd } = payload;
+	// Round like gross/net so the stored gross − deductions === net to the cent
+	const deductions = Math.round((payload.deductions ?? 0) * 100) / 100;
 
 	// Verify employee exists
 	const employee = await prisma.employee.findFirst({
