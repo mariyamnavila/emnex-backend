@@ -9,8 +9,64 @@ import type {
 	IRoleUpdatePayload,
 } from "./role.interface";
 
+// Resolves the permissions to attach to a role: de-dupes, pulls in each action's
+// "<module>.view" dependency, and rejects IDs the caller doesn't hold (no
+// privilege escalation) or that don't exist. Shared by create + assign.
+const resolveAssignablePermissions = async (
+	inputPermissionIds: string[],
+	user: IRequestUser,
+): Promise<{ id: string; name: string }[]> => {
+	const inputIds = [...new Set(inputPermissionIds)];
+
+	const allPermissions = await prisma.permission.findMany({
+		select: { id: true, name: true },
+	});
+	const idByName = new Map(allPermissions.map((p) => [p.name, p.id]));
+	const nameById = new Map(allPermissions.map((p) => [p.id, p.name]));
+	const SELF_ACTIONS = new Set(["view", "view_own"]);
+
+	const withDeps = new Set(inputIds);
+	for (const id of inputIds) {
+		const [moduleName, action] = (nameById.get(id) ?? "").split(".");
+		if (action && !SELF_ACTIONS.has(action)) {
+			const viewId = idByName.get(`${moduleName}.view`);
+			if (viewId) withDeps.add(viewId);
+		}
+	}
+
+	const userWithRole = await prisma.user.findUnique({
+		where: { id: user.userId },
+		include: {
+			role: { include: { permissions: { select: { permissionId: true } } } },
+		},
+	});
+	const userPermissionIds = new Set(
+		userWithRole?.role.permissions.map((rp) => rp.permissionId) || [],
+	);
+
+	const unauthorizedPerms = [...withDeps].filter(
+		(permId) => !userPermissionIds.has(permId),
+	);
+	if (unauthorizedPerms.length > 0) {
+		throw new AppError(
+			httpStatus.FORBIDDEN,
+			`You cannot assign permissions you don't have: ${unauthorizedPerms.join(", ")}`,
+		);
+	}
+
+	const resolved = allPermissions.filter((p) => withDeps.has(p.id));
+	if (resolved.length !== withDeps.size) {
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			"One or more permission IDs are invalid",
+		);
+	}
+
+	return resolved;
+};
+
 const createRole = async (payload: IRoleCreatePayload, user: IRequestUser) => {
-	const { name, description } = payload;
+	const { name, description, permissionIds } = payload;
 
 	const existingRole = await prisma.role.findFirst({
 		where: {
@@ -27,35 +83,51 @@ const createRole = async (payload: IRoleCreatePayload, user: IRequestUser) => {
 		);
 	}
 
+	// A role with no permissions can't do anything, so creation assigns its
+	// starting set up front (validated/resolved before we touch the role).
+	const resolvedPermissions = await resolveAssignablePermissions(permissionIds, user);
+
 	// A soft-deleted role still holds the (organizationId, name) unique slot, so
 	// recreating that name would hit the DB unique constraint. Revive the deleted
-	// row as a fresh role (drop its old permissions) instead of inserting.
+	// row (dropping its old permissions) instead of inserting.
 	const softDeletedRole = await prisma.role.findFirst({
 		where: { name, organizationId: user.organizationId, deletedAt: { not: null } },
 	});
 
-	const role = softDeletedRole
-		? await prisma.$transaction(async (tx) => {
-				await tx.rolePermission.deleteMany({ where: { roleId: softDeletedRole.id } });
-				return tx.role.update({
+	const role = await prisma.$transaction(async (tx) => {
+		const created = softDeletedRole
+			? await tx.role.update({
 					where: { id: softDeletedRole.id },
 					data: { description: description ?? null, deletedAt: null, createdAt: new Date() },
+				})
+			: await tx.role.create({
+					data: {
+						name: name,
+						description: description,
+						organizationId: user.organizationId,
+					},
 				});
-			})
-		: await prisma.role.create({
-				data: {
-					name: name,
-					description: description,
-					organizationId: user.organizationId,
-				},
-			});
+
+		if (softDeletedRole) {
+			await tx.rolePermission.deleteMany({ where: { roleId: created.id } });
+		}
+		await tx.rolePermission.createMany({
+			data: resolvedPermissions.map((p) => ({ roleId: created.id, permissionId: p.id })),
+			skipDuplicates: true,
+		});
+		return created;
+	});
 
 	createAuditLog({
 		user,
 		action: AuditAction.CREATE_ROLE,
 		entity: "Role",
 		entityId: role.id,
-		metadata: { roleName: name, description: description ?? null },
+		metadata: {
+			roleName: name,
+			description: description ?? null,
+			permissionCount: resolvedPermissions.length,
+		},
 	});
 
 	return role;
@@ -313,64 +385,8 @@ const assignPermissions = async (
 		);
 	}
 
-	const inputIds = [...new Set(payload.permissionIds)];
-
-	// A role that can act on a resource must also be able to view it, so every
-	// action permission (anything but view / view_own) pulls in its "<module>.view".
-	const allPermissions = await prisma.permission.findMany({
-		select: { id: true, name: true },
-	});
-	const idByName = new Map(allPermissions.map((p) => [p.name, p.id]));
-	const nameById = new Map(allPermissions.map((p) => [p.id, p.name]));
-	const SELF_ACTIONS = new Set(["view", "view_own"]);
-	const withDeps = new Set(inputIds);
-	for (const id of inputIds) {
-		const [moduleName, action] = (nameById.get(id) ?? "").split(".");
-		if (action && !SELF_ACTIONS.has(action)) {
-			const viewId = idByName.get(`${moduleName}.view`);
-			if (viewId) withDeps.add(viewId);
-		}
-	}
-	const permissionIds = [...withDeps];
-
-	// Get user's own permissions to validate they can only assign what they have
-	const userWithRole = await prisma.user.findUnique({
-		where: { id: user.userId },
-		include: {
-			role: {
-				include: {
-					permissions: {
-						select: { permissionId: true },
-					},
-				},
-			},
-		},
-	});
-
-	const userPermissionIds = new Set(
-		userWithRole?.role.permissions.map((rp) => rp.permissionId) || [],
-	);
-
-	// Check if user is trying to assign permissions they don't have
-	const unauthorizedPerms = permissionIds.filter(
-		(permId) => !userPermissionIds.has(permId),
-	);
-
-	if (unauthorizedPerms.length > 0) {
-		throw new AppError(
-			httpStatus.FORBIDDEN,
-			`You cannot assign permissions you don't have: ${unauthorizedPerms.join(", ")}`,
-		);
-	}
-
-	const permissions = allPermissions.filter((p) => withDeps.has(p.id));
-
-	if (permissions.length !== permissionIds.length) {
-		throw new AppError(
-			httpStatus.BAD_REQUEST,
-			"One or more permission IDs are invalid",
-		);
-	}
+	const permissions = await resolveAssignablePermissions(payload.permissionIds, user);
+	const permissionIds = permissions.map((p) => p.id);
 
 	await prisma.$transaction(async (tx) => {
 		const previous = await tx.rolePermission.findMany({

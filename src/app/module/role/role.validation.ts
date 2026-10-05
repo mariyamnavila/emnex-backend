@@ -6,6 +6,9 @@ const CreateRoleZodSchema = z.object({
 		.min(2, "Role name must be at least 2 characters")
 		.max(50, "Role name must be at most 50 characters"),
 	description: z.string().max(200).optional(),
+	permissionIds: z
+		.array(z.uuid("Invalid permission ID"))
+		.min(1, "A role needs at least one permission"),
 });
 
 const UpdateRoleZodSchema = z.object({

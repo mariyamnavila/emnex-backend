@@ -1,6 +1,7 @@
 export interface IRoleCreatePayload {
 	name: string;
 	description?: string;
+	permissionIds: string[];
 }
 
 export interface IRoleUpdatePayload {
