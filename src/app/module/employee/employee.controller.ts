@@ -108,7 +108,7 @@ const resendCredentials = catchAsync(async (req: Request, res: Response) => {
 		statusCode: httpStatus.OK,
 		success: true,
 		message: result.message,
-		data: null,
+		data: { temporaryPassword: result.temporaryPassword },
 	});
 });
 

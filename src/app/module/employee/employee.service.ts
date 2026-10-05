@@ -559,7 +559,8 @@ const resendCredentials = async (id: string, user: IRequestUser) => {
 		organizationName: organization?.name || "EmNex",
 	});
 
-	return { message: "Credentials resent successfully" };
+	// Returned so the admin can share it if the email doesn't arrive (same as create)
+	return { message: "Credentials resent successfully", temporaryPassword };
 };
 
 export const EmployeeService = {
