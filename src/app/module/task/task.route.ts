@@ -70,7 +70,8 @@ router.patch(
 router.get(
 	"/:id/submissions",
 	auth(),
-	checkPermission("task.view", "submission.view"),
+	// Only task.view — the service scopes to your own task unless you manage tasks
+	checkPermission("task.view"),
 	TaskController.getTaskSubmissions,
 );
 
