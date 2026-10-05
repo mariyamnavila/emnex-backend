@@ -86,7 +86,9 @@ const generatePayroll = async (
 		},
 	});
 
-	if (existingPayroll) {
+	// A rejected payroll can be regenerated (we reset that row below); any other
+	// status means a live payroll already exists for this period.
+	if (existingPayroll && existingPayroll.status !== "REJECTED") {
 		throw new AppError(
 			httpStatus.CONFLICT,
 			"Payroll already exists for this employee and period",
@@ -111,7 +113,16 @@ const generatePayroll = async (
 	let grossAmount: number;
 	let approvedHours: number | null = null;
 
-	if (employee.salaryType === "HOURLY") {
+	// A manual amount (PTO / bonus / special case) overrides the hours/salary calc
+	if (payload.grossAmount !== undefined) {
+		grossAmount = toCents(payload.grossAmount);
+		if (employee.salaryType === "HOURLY") {
+			approvedHours = approvedSubmissions.reduce(
+				(sum, sub) => sum + Number(sub.hoursWorked),
+				0,
+			);
+		}
+	} else if (employee.salaryType === "HOURLY") {
 		const hourlyRate = Number(employee.hourlyRate || 0);
 		if (hourlyRate <= 0) {
 			throw new AppError(
@@ -154,26 +165,34 @@ const generatePayroll = async (
 	// Calculate net amount
 	const netAmount = toCents(grossAmount - deductions);
 
-	// Create payroll
-	const payroll = await prisma.payroll.create({
-		data: {
-			employeeId,
-			organizationId: user.organizationId,
-			periodStart: new Date(periodStart),
-			periodEnd: new Date(periodEnd),
-			grossAmount,
-			deductions,
-			netAmount,
-			status: "DRAFT",
-		},
-		include: {
-			employee: {
-				include: {
-					user: { omit: { password: true } },
-				},
+	const include = {
+		employee: {
+			include: {
+				user: { omit: { password: true } },
 			},
 		},
-	});
+	};
+
+	// Regenerate reuses the rejected row; otherwise create a fresh draft
+	const payroll = existingPayroll
+		? await prisma.payroll.update({
+				where: { id: existingPayroll.id },
+				data: { grossAmount, deductions, netAmount, status: "DRAFT" },
+				include,
+			})
+		: await prisma.payroll.create({
+				data: {
+					employeeId,
+					organizationId: user.organizationId,
+					periodStart: new Date(periodStart),
+					periodEnd: new Date(periodEnd),
+					grossAmount,
+					deductions,
+					netAmount,
+					status: "DRAFT",
+				},
+				include,
+			});
 
 	createAuditLog({
 		user,
