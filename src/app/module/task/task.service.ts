@@ -4,6 +4,7 @@ import { prisma } from "../../lib/prisma";
 import { checkUserPermission } from "../../middleware/checkPermission";
 import { AppError } from "../../utils/AppError";
 import { AuditAction, createAuditLog, toAuditValue } from "../../utils/auditLog";
+import { getCallerEmployeeId, hasAnyPermission, TASK_MANAGE } from "../../utils/scope";
 import {
 	validateEmployeeCanAssign,
 	validateEmployeeCanViewTasks,
@@ -138,6 +139,11 @@ const getAllTasks = async (user: IRequestUser, query: ITaskQueryParams) => {
 		where.employeeId = employeeId;
 	}
 
+	// Plain employees (no task-management/review permission) only see their own tasks
+	if (!hasAnyPermission(user, TASK_MANAGE)) {
+		where.employeeId = (await getCallerEmployeeId(user)) ?? "__none__";
+	}
+
 	const skip = (page - 1) * limit;
 
 	const [tasks, total] = await Promise.all([
@@ -199,6 +205,14 @@ const getTaskById = async (id: string, user: IRequestUser) => {
 		);
 	}
 
+	// Plain employees (no task-management/review permission) can only view their own
+	if (!hasAnyPermission(user, TASK_MANAGE)) {
+		const employeeId = await getCallerEmployeeId(user);
+		if (!employeeId || task.employeeId !== employeeId) {
+			throw new AppError(httpStatus.FORBIDDEN, "You can only view your own tasks");
+		}
+	}
+
 	return task;
 };
 
@@ -227,6 +241,15 @@ const updateTask = async (
 			httpStatus.FORBIDDEN,
 			"You can only update tasks in your organization",
 		);
+	}
+
+	// `task.update` is shared with employees (for status changes); editing task
+	// details is a manager action, so a non-manager may only edit their own task
+	if (!hasAnyPermission(user, TASK_MANAGE)) {
+		const employeeId = await getCallerEmployeeId(user);
+		if (!employeeId || task.employeeId !== employeeId) {
+			throw new AppError(httpStatus.FORBIDDEN, "You can only edit your own tasks");
+		}
 	}
 
 	const updatedTask = await prisma.task.update({
@@ -537,6 +560,14 @@ const getTaskSubmissions = async (id: string, user: IRequestUser) => {
 			httpStatus.FORBIDDEN,
 			"You can only view submissions for tasks in your organization",
 		);
+	}
+
+	// Plain employees (no review/management permission) only on their own task
+	if (!hasAnyPermission(user, TASK_MANAGE)) {
+		const employeeId = await getCallerEmployeeId(user);
+		if (!employeeId || task.employeeId !== employeeId) {
+			throw new AppError(httpStatus.FORBIDDEN, "You can only view submissions on your own tasks");
+		}
 	}
 
 	const submissions = await prisma.workSubmission.findMany({
