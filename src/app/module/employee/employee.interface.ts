@@ -17,6 +17,7 @@ export interface IEmployeeUpdatePayload {
 	salary?: number;
 	hourlyRate?: number;
 	status?: "ACTIVE" | "INACTIVE" | "SUSPENDED" | "TERMINATED";
+	roleId?: string;
 }
 
 export interface IEmployeeQueryParams {

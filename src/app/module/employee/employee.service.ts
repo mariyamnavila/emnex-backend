@@ -355,9 +355,54 @@ const updateEmployee = async (
 		}
 	}
 
+	// Reassigning a role is privileged: needs role.update, can't target yourself
+	// or the admin, and you can't grant a role more powerful than your own.
+	if (payload.roleId && payload.roleId !== employee.user.roleId) {
+		if (!user.permissions.includes("role.update")) {
+			throw new AppError(
+				httpStatus.FORBIDDEN,
+				"Changing an employee's role requires the role update permission",
+			);
+		}
+		if (employee.userId === user.userId) {
+			throw new AppError(httpStatus.FORBIDDEN, "You can't change your own role");
+		}
+		if (targetIsAdmin) {
+			throw new AppError(httpStatus.FORBIDDEN, "Can't change the admin's role");
+		}
+
+		const role = await prisma.role.findFirst({
+			where: { id: payload.roleId, organizationId: user.organizationId, deletedAt: null },
+			include: { permissions: { include: { permission: true } } },
+		});
+		if (!role) {
+			throw new AppError(httpStatus.NOT_FOUND, "Role not found in this organization");
+		}
+
+		const missing = role.permissions
+			.map((rp) => rp.permission.name)
+			.filter((name) => !user.permissions.includes(name));
+		if (missing.length > 0) {
+			throw new AppError(
+				httpStatus.FORBIDDEN,
+				`You can't assign a role with permissions you don't have: ${missing.join(", ")}`,
+			);
+		}
+
+		await prisma.user.update({ where: { id: employee.userId }, data: { roleId: payload.roleId } });
+	}
+
 	const updatedEmployee = await prisma.employee.update({
 		where: { id },
-		data: payload,
+		// roleId lives on the user (handled above), so keep it out of the employee update
+		data: {
+			departmentId: payload.departmentId,
+			jobTitle: payload.jobTitle,
+			salaryType: payload.salaryType,
+			salary: payload.salary,
+			hourlyRate: payload.hourlyRate,
+			status: payload.status,
+		},
 		include: {
 			user: { omit: { password: true } },
 			department: true,

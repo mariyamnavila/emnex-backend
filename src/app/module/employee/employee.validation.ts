@@ -29,6 +29,7 @@ const UpdateEmployeeZodSchema = z.object({
 	salary: z.number().positive("Salary must be positive").optional(),
 	hourlyRate: z.number().positive("Hourly rate must be positive").optional(),
 	status: z.enum(["ACTIVE", "INACTIVE", "SUSPENDED", "TERMINATED"]).optional(),
+	roleId: z.uuid("Invalid role ID").optional(),
 });
 
 export const EmployeeValidation = {
