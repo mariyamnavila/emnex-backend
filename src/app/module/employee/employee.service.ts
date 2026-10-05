@@ -329,6 +329,15 @@ const updateEmployee = async (
 		);
 	}
 
+	// Terminating is a soft delete, so it needs the delete permission — not just
+	// update (which the status change otherwise requires)
+	if (payload.status === "TERMINATED" && !user.permissions.includes("employee.delete")) {
+		throw new AppError(
+			httpStatus.FORBIDDEN,
+			"Terminating an employee requires the employee delete permission",
+		);
+	}
+
 	if (payload.departmentId) {
 		const department = await prisma.department.findFirst({
 			where: {

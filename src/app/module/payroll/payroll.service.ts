@@ -95,6 +95,25 @@ const generatePayroll = async (
 		);
 	}
 
+	// Reject any OTHER (non-rejected) payroll whose period overlaps this one —
+	// overlapping periods would pay the same approved hours twice.
+	const overlapping = await prisma.payroll.findFirst({
+		where: {
+			employeeId,
+			status: { not: "REJECTED" },
+			periodStart: { lte: new Date(periodEnd) },
+			periodEnd: { gte: new Date(periodStart) },
+			...(existingPayroll ? { id: { not: existingPayroll.id } } : {}),
+		},
+		select: { periodStart: true, periodEnd: true },
+	});
+	if (overlapping) {
+		throw new AppError(
+			httpStatus.CONFLICT,
+			`This period overlaps an existing payroll (${overlapping.periodStart.toISOString().slice(0, 10)} – ${overlapping.periodEnd.toISOString().slice(0, 10)}) for this employee`,
+		);
+	}
+
 	// Get approved submissions for this period
 	const approvedSubmissions = await prisma.workSubmission.findMany({
 		where: {
