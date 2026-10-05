@@ -298,7 +298,25 @@ const assignPermissions = async (
 		);
 	}
 
-	const permissionIds = [...new Set(payload.permissionIds)];
+	const inputIds = [...new Set(payload.permissionIds)];
+
+	// A role that can act on a resource must also be able to view it, so every
+	// action permission (anything but view / view_own) pulls in its "<module>.view".
+	const allPermissions = await prisma.permission.findMany({
+		select: { id: true, name: true },
+	});
+	const idByName = new Map(allPermissions.map((p) => [p.name, p.id]));
+	const nameById = new Map(allPermissions.map((p) => [p.id, p.name]));
+	const SELF_ACTIONS = new Set(["view", "view_own"]);
+	const withDeps = new Set(inputIds);
+	for (const id of inputIds) {
+		const [moduleName, action] = (nameById.get(id) ?? "").split(".");
+		if (action && !SELF_ACTIONS.has(action)) {
+			const viewId = idByName.get(`${moduleName}.view`);
+			if (viewId) withDeps.add(viewId);
+		}
+	}
+	const permissionIds = [...withDeps];
 
 	// Get user's own permissions to validate they can only assign what they have
 	const userWithRole = await prisma.user.findUnique({
@@ -330,17 +348,7 @@ const assignPermissions = async (
 		);
 	}
 
-	const permissions = await prisma.permission.findMany({
-		where: {
-			id: {
-				in: permissionIds,
-			},
-		},
-		select: {
-			id: true,
-			name: true,
-		},
-	});
+	const permissions = allPermissions.filter((p) => withDeps.has(p.id));
 
 	if (permissions.length !== permissionIds.length) {
 		throw new AppError(
