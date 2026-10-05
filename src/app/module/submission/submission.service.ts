@@ -21,6 +21,39 @@ const validSubmissionTransitions: Record<string, string[]> = {
 	REJECTED: [],
 };
 
+const DAILY_HOURS_CAP = 24;
+
+// The employee's total non-rejected hours for a work date (across all tasks)
+// can't exceed 24 — the 24h/submission cap alone allows multiple logs per day.
+const assertDailyHoursWithinCap = async (
+	employeeId: string,
+	workDate: string | Date,
+	newHours: number,
+	excludeSubmissionId?: string,
+) => {
+	const day = new Date(workDate);
+	const dayStart = new Date(Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate()));
+	const dayEnd = new Date(dayStart);
+	dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
+
+	const existing = await prisma.workSubmission.aggregate({
+		where: {
+			employeeId,
+			status: { not: "REJECTED" },
+			workDate: { gte: dayStart, lt: dayEnd },
+			...(excludeSubmissionId ? { id: { not: excludeSubmissionId } } : {}),
+		},
+		_sum: { hoursWorked: true },
+	});
+	const already = Number(existing._sum.hoursWorked ?? 0);
+	if (already + newHours > DAILY_HOURS_CAP) {
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			`You've already logged ${already} h for that day; the total can't exceed ${DAILY_HOURS_CAP} h`,
+		);
+	}
+};
+
 const createSubmission = async (
 	payload: ISubmissionCreatePayload,
 	user: IRequestUser,
@@ -75,6 +108,10 @@ const createSubmission = async (
 	if (task.employeeId !== employee.id) {
 		throw new AppError(httpStatus.FORBIDDEN, "Task is not assigned to you");
 	}
+
+	// A day has 24 hours — cap the employee's total (non-rejected) hours for the
+	// work date across all tasks, not just per submission
+	await assertDailyHoursWithinCap(employee.id, workDate, Number(hoursWorked));
 
 	const submission = await prisma.workSubmission.create({
 		data: {
@@ -256,6 +293,16 @@ const updateSubmission = async (
 		throw new AppError(
 			httpStatus.BAD_REQUEST,
 			"Can only update submissions with PENDING status",
+		);
+	}
+
+	// Re-check the 24h/day cap if the hours or date change (ignoring this row)
+	if (hoursWorked !== undefined || workDate !== undefined) {
+		await assertDailyHoursWithinCap(
+			employee.id,
+			workDate ?? submission.workDate,
+			Number(hoursWorked ?? submission.hoursWorked),
+			submission.id,
 		);
 	}
 
