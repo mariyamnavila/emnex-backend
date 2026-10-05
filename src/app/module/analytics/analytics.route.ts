@@ -1,10 +1,13 @@
 import { Router } from "express";
 import { auth } from "../../middleware/checkAuth";
-import { checkPermission } from "../../middleware/checkPermission";
+import { checkAnyPermission, checkPermission } from "../../middleware/checkPermission";
 import { AnalyticsController } from "./analytics.controller";
 
 const router = Router();
 
+// The cross-resource overview stays on analytics.view. The per-resource stat
+// cards are just counts of data you can already view, so they also accept that
+// resource's view permission (a role with employee.view sees employee stats).
 router.get(
 	"/dashboard",
 	auth(),
@@ -14,25 +17,25 @@ router.get(
 router.get(
 	"/employees",
 	auth(),
-	checkPermission("analytics.view"),
+	checkAnyPermission("analytics.view", "employee.view"),
 	AnalyticsController.getEmployeeAnalytics,
 );
 router.get(
 	"/projects",
 	auth(),
-	checkPermission("analytics.view"),
+	checkAnyPermission("analytics.view", "project.view"),
 	AnalyticsController.getProjectAnalytics,
 );
 router.get(
 	"/payroll",
 	auth(),
-	checkPermission("analytics.view"),
+	checkAnyPermission("analytics.view", "payroll.view"),
 	AnalyticsController.getPayrollAnalytics,
 );
 router.get(
 	"/payments",
 	auth(),
-	checkPermission("analytics.view"),
+	checkAnyPermission("analytics.view", "payment.view"),
 	AnalyticsController.getPaymentAnalytics,
 );
 

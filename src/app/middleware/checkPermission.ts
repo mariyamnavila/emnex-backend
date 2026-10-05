@@ -35,6 +35,27 @@ export const checkUserPermission = async (
 	return userPermissions.includes(permissionName);
 };
 
+// Passes when the user has ANY ONE of the permissions (vs. checkPermission = ALL)
+export const checkAnyPermission = (...anyOfPermissions: string[]) => {
+	return catchAsync(async (req: Request, _res: Response, next: NextFunction) => {
+		const user = req.user as IRequestUser;
+
+		if (!user || !user.userId) {
+			throw new AppError(httpStatus.UNAUTHORIZED, "You are not authenticated.");
+		}
+
+		const hasAny = anyOfPermissions.some((perm) => user.permissions.includes(perm));
+		if (!hasAny) {
+			throw new AppError(
+				httpStatus.FORBIDDEN,
+				`You don't have the required permissions: one of ${anyOfPermissions.join(", ")}`,
+			);
+		}
+
+		next();
+	});
+};
+
 export const checkPermission = (...requiredPermissions: string[]) => {
 	return catchAsync(async (req: Request, res: Response, next: NextFunction) => {
 		const user = req.user as IRequestUser;
