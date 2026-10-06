@@ -266,11 +266,12 @@ EmNex-Backend/
 
 | Document | Covers |
 | :--- | :--- |
-| [API_INTEGRATION.md](./API_INTEGRATION.md) | All 79 endpoints: permissions, request bodies, responses, errors, pagination |
+| [POSTMAN.md](./POSTMAN.md) | **Automated Postman test suite guide**: 82 endpoints, token capture, 4 demo logins, and runbook |
+| [API_INTEGRATION.md](./API_INTEGRATION.md) | All endpoints: permissions, request bodies, responses, errors, pagination |
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | Module pattern, request pipeline, auth and permission middleware, error handling, audit log, permission catalog |
 | [DATABASE.md](./DATABASE.md) | ER diagram, every model and enum, constraints, soft deletes, migrations |
 | [WORKFLOW.md](./WORKFLOW.md) | Sessions, onboarding, task / work-hours / payroll / payment flows and every business rule |
-| [Postman collection](./EmNex%20Backend.postman_collection.json) | Import into Postman to try every endpoint |
+| [Postman collection](./EmNex%20Backend.postman_collection.json) | Complete JSON collection (82 endpoints) ready to import into Postman |
 
 ---
 
