@@ -1,4 +1,4 @@
-import type { Request, Response } from "express";
+import type { CookieOptions, Request, Response } from "express";
 import httpStatus from "http-status";
 import config from "../../config";
 import { AppError } from "../../utils/AppError";
@@ -10,22 +10,24 @@ import { AuthService } from "./auth.service";
 
 // accessToken lives 24 h, refreshToken 7 days; both httpOnly
 const setAuthCookies = (
-	res: Response,
-	tokens: { accessToken: string; refreshToken: string },
+  res: Response,
+  tokens: { accessToken: string; refreshToken: string },
 ) => {
-	const options = {
-		httpOnly: true,
-		secure: config.node_env === "production",
-		sameSite: "none" as const,
-	};
-	res.cookie("accessToken", tokens.accessToken, {
-		...options,
-		maxAge: 1000 * 60 * 60 * 24,
-	});
-	res.cookie("refreshToken", tokens.refreshToken, {
-		...options,
-		maxAge: 1000 * 60 * 60 * 24 * 7,
-	});
+  const options: CookieOptions = {
+    httpOnly: true,
+    secure: config.node_env === "development" ? false : true,
+    sameSite: config.node_env === "development" ? "lax" : "none",
+  };
+
+  res.cookie("accessToken", tokens.accessToken, {
+    ...options,
+    maxAge: 1000 * 60 * 60 * 24,
+  });
+
+  res.cookie("refreshToken", tokens.refreshToken, {
+    ...options,
+    maxAge: 1000 * 60 * 60 * 24 * 7,
+  });
 };
 
 const register = catchAsync(async (req: Request, res: Response) => {
