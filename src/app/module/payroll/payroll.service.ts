@@ -130,50 +130,38 @@ const generatePayroll = async (
 
 	const toCents = (amount: number) => Math.round(amount * 100) / 100;
 
-	// Calculate gross amount
-	let grossAmount: number;
+	// An optional extra amount (bonus, PTO, or paying an hourly employee with no
+	// logged hours) is ADDED on top of the calculated pay — it never replaces it.
+	const extra = toCents(payload.extraAmount ?? 0);
+
+	// Base pay from the employee's pay model (hours × rate, or monthly salary)
+	let baseGross: number;
 	let approvedHours: number | null = null;
 
-	// A manual amount (PTO / bonus / special case) overrides the hours/salary calc
-	if (payload.grossAmount !== undefined) {
-		grossAmount = toCents(payload.grossAmount);
-		if (employee.salaryType === "HOURLY") {
-			approvedHours = approvedSubmissions.reduce(
-				(sum, sub) => sum + Number(sub.hoursWorked),
-				0,
-			);
-		}
-	} else if (employee.salaryType === "HOURLY") {
-		const hourlyRate = Number(employee.hourlyRate || 0);
-		if (hourlyRate <= 0) {
-			throw new AppError(
-				httpStatus.BAD_REQUEST,
-				"This employee has no hourly rate set",
-			);
-		}
-
-		// Sum hours from approved submissions
-		const totalHours = approvedSubmissions.reduce(
+	if (employee.salaryType === "HOURLY") {
+		approvedHours = approvedSubmissions.reduce(
 			(sum, sub) => sum + Number(sub.hoursWorked),
 			0,
 		);
-		if (totalHours === 0) {
-			throw new AppError(
-				httpStatus.BAD_REQUEST,
-				`${employee.user.name} has no approved work hours in this period`,
-			);
-		}
-
-		approvedHours = totalHours;
-		grossAmount = toCents(totalHours * hourlyRate);
+		baseGross = toCents(approvedHours * Number(employee.hourlyRate || 0));
 	} else {
-		grossAmount = toCents(Number(employee.salary || 0));
-		if (grossAmount <= 0) {
-			throw new AppError(
-				httpStatus.BAD_REQUEST,
-				"This employee has no monthly salary set",
-			);
-		}
+		baseGross = toCents(Number(employee.salary || 0));
+	}
+
+	const grossAmount = toCents(baseGross + extra);
+
+	// Nothing to pay: no base pay and no extra added
+	if (grossAmount <= 0) {
+		const reason =
+			employee.salaryType === "HOURLY"
+				? approvedHours === 0
+					? "no approved work hours"
+					: "no hourly rate set"
+				: "no monthly salary set";
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			`No pay to generate for ${employee.user.name} in this period — ${reason}, and no extra amount added.`,
+		);
 	}
 
 	if (deductions > grossAmount) {
@@ -227,6 +215,8 @@ const generatePayroll = async (
 			periodEnd: toAuditValue(payroll.periodEnd),
 			salaryType: employee.salaryType,
 			approvedHours,
+			baseGross,
+			extra,
 			grossAmount,
 			deductions,
 			netAmount,

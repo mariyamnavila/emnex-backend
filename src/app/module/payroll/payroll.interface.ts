@@ -3,8 +3,8 @@ export interface IPayrollGeneratePayload {
 	periodStart: string;
 	periodEnd: string;
 	deductions?: number;
-	/** Manual gross override for special cases (PTO, bonus, 0-hours) — skips the hours/salary calc */
-	grossAmount?: number;
+	/** Extra added on top of the calculated pay — bonus, PTO, or paying an hourly employee with no logged hours */
+	extraAmount?: number;
 }
 
 export interface IPayrollQueryParams {
