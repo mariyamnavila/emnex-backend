@@ -7,7 +7,7 @@ import {
 	validateEmployeeCanViewSubmissions,
 	validateEmployeeCanWork,
 } from "../../utils/employeeStatus";
-import { getCallerEmployeeId, hasAnyPermission, SUBMISSION_VIEW_ALL } from "../../utils/scope";
+import { getCallerEmployeeId } from "../../utils/scope";
 import type {
 	ISubmissionCreatePayload,
 	ISubmissionQueryParams,
@@ -179,7 +179,7 @@ const getAllSubmissions = async (
 	}
 
 	// Plain employees (no review permission) only ever see their own submissions
-	if (!hasAnyPermission(user, SUBMISSION_VIEW_ALL)) {
+	if (!user.permissions.includes("submission.view")) {
 		where.employeeId = (await getCallerEmployeeId(user)) ?? "__none__";
 	}
 
@@ -241,7 +241,7 @@ const getSubmissionById = async (id: string, user: IRequestUser) => {
 	}
 
 	// Plain employees (no review permission) can only view their own
-	if (!hasAnyPermission(user, SUBMISSION_VIEW_ALL)) {
+	if (!user.permissions.includes("submission.view")) {
 		const employeeId = await getCallerEmployeeId(user);
 		if (!employeeId || submission.employeeId !== employeeId) {
 			throw new AppError(httpStatus.FORBIDDEN, "You can only view your own submissions");

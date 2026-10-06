@@ -23,15 +23,18 @@ const defaultPermissions = [
 	"project.update",
 	"project.delete",
 
-	// Task
+	// Task  (_own = your own tasks; plain = all tasks / management)
 	"task.view",
+	"task.view_own",
 	"task.create",
 	"task.assign",
 	"task.update",
+	"task.update_own",
 	"task.delete",
 
-	// Submission
+	// Submission / work hours  (_own = your own; plain = everyone's)
 	"submission.view",
+	"submission.view_own",
 	"submission.create",
 	"submission.update",
 	"submission.approve",
@@ -65,6 +68,18 @@ const defaultPermissions = [
 	"analytics.view",
 ];
 
+// Every working user manages their OWN tasks, work hours and pay with these.
+// Management roles add the "all" permissions on top.
+const selfServicePermissions = [
+	"task.view_own",
+	"task.update_own",
+	"submission.view_own",
+	"submission.create",
+	"submission.update",
+	"payroll.view_own",
+	"payment.view_own",
+];
+
 const systemRoleTemplates = [
 	{
 		name: "ADMIN",
@@ -88,6 +103,7 @@ const systemRoleTemplates = [
 			"submission.approve",
 			"submission.reject",
 			"analytics.view",
+			...selfServicePermissions,
 		],
 	},
 	{
@@ -104,20 +120,13 @@ const systemRoleTemplates = [
 			"payment.create",
 			"payment.refund",
 			"analytics.view",
+			...selfServicePermissions,
 		],
 	},
 	{
 		name: "EMPLOYEE",
 		description: "Regular employee",
-		permissions: [
-			"task.view",
-			"task.update",
-			"submission.view",
-			"submission.create",
-			"submission.update",
-			"payroll.view_own",
-			"payment.view_own",
-		],
+		permissions: selfServicePermissions,
 	},
 ];
 

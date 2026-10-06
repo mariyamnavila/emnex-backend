@@ -28,7 +28,9 @@ const resolveAssignablePermissions = async (
 	const withDeps = new Set(inputIds);
 	for (const id of inputIds) {
 		const [moduleName, action] = (nameById.get(id) ?? "").split(".");
-		if (action && !SELF_ACTIONS.has(action)) {
+		// Only "act on all" permissions pull in the module's view; self-service
+		// ones (view/view_own and any *_own action) stand alone.
+		if (action && !SELF_ACTIONS.has(action) && !action.endsWith("_own")) {
 			const viewId = idByName.get(`${moduleName}.view`);
 			if (viewId) withDeps.add(viewId);
 		}

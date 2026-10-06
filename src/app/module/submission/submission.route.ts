@@ -10,7 +10,7 @@ const router = Router();
 router.get(
 	"/my",
 	auth(),
-	checkPermission("submission.view"),
+	checkPermission("submission.view_own"),
 	SubmissionController.getMySubmissions,
 );
 
@@ -34,7 +34,8 @@ router.get(
 router.get(
 	"/:id",
 	auth(),
-	checkPermission("submission.view"),
+	// Own log (submission.view_own) or any (submission.view); the service scopes
+	checkAnyPermission("submission.view_own", "submission.view"),
 	SubmissionController.getSubmissionById,
 );
 

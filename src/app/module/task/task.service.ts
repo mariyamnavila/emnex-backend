@@ -4,7 +4,7 @@ import { prisma } from "../../lib/prisma";
 import { checkUserPermission } from "../../middleware/checkPermission";
 import { AppError } from "../../utils/AppError";
 import { AuditAction, createAuditLog, toAuditValue } from "../../utils/auditLog";
-import { getCallerEmployeeId, hasAnyPermission, TASK_MANAGE } from "../../utils/scope";
+import { getCallerEmployeeId } from "../../utils/scope";
 import {
 	validateEmployeeCanAssign,
 	validateEmployeeCanViewTasks,
@@ -21,7 +21,7 @@ import type {
 // A task is only workable by someone whose role can move its status (task.update)
 // and log hours against it (submission.create). Blocking at assignment time stops
 // dead tasks given to a role (e.g. HR) that can't act on them.
-const TASK_WORK_PERMISSIONS = ["task.update", "submission.create"];
+const TASK_WORK_PERMISSIONS = ["task.update_own", "submission.create"];
 const assertAssigneeCanWorkTasks = async (employeeId: string) => {
 	const employee = await prisma.employee.findUnique({
 		where: { id: employeeId },
@@ -168,7 +168,7 @@ const getAllTasks = async (user: IRequestUser, query: ITaskQueryParams) => {
 	}
 
 	// Plain employees (no task-management/review permission) only see their own tasks
-	if (!hasAnyPermission(user, TASK_MANAGE)) {
+	if (!user.permissions.includes("task.view")) {
 		where.employeeId = (await getCallerEmployeeId(user)) ?? "__none__";
 	}
 
@@ -234,7 +234,7 @@ const getTaskById = async (id: string, user: IRequestUser) => {
 	}
 
 	// Plain employees (no task-management/review permission) can only view their own
-	if (!hasAnyPermission(user, TASK_MANAGE)) {
+	if (!user.permissions.includes("task.view")) {
 		const employeeId = await getCallerEmployeeId(user);
 		if (!employeeId || task.employeeId !== employeeId) {
 			throw new AppError(httpStatus.FORBIDDEN, "You can only view your own tasks");
@@ -273,7 +273,7 @@ const updateTask = async (
 
 	// `task.update` is shared with employees (for status changes); editing task
 	// details is a manager action, so a non-manager may only edit their own task
-	if (!hasAnyPermission(user, TASK_MANAGE)) {
+	if (!user.permissions.includes("task.view")) {
 		const employeeId = await getCallerEmployeeId(user);
 		if (!employeeId || task.employeeId !== employeeId) {
 			throw new AppError(httpStatus.FORBIDDEN, "You can only edit your own tasks");
@@ -497,11 +497,15 @@ const updateTaskStatus = async (
 		}
 		validateEmployeeCanWork(self.status);
 	} else {
-		const [canAssign, canReview] = await Promise.all([
+		// Changing someone else's task needs the manage-all perm (task.update) plus
+		// a reason to act on it (assign or review rights) — task.update_own alone
+		// only lets you move your own work.
+		const [canManageAll, canAssign, canReview] = await Promise.all([
+			checkUserPermission(user.userId, "task.update"),
 			checkUserPermission(user.userId, "task.assign"),
 			checkUserPermission(user.userId, "submission.approve"),
 		]);
-		if (!canAssign && !canReview) {
+		if (!canManageAll || (!canAssign && !canReview)) {
 			throw new AppError(
 				httpStatus.FORBIDDEN,
 				"You can only change the status of tasks assigned to you",
@@ -592,7 +596,7 @@ const getTaskSubmissions = async (id: string, user: IRequestUser) => {
 	}
 
 	// Plain employees (no review/management permission) only on their own task
-	if (!hasAnyPermission(user, TASK_MANAGE)) {
+	if (!user.permissions.includes("task.view")) {
 		const employeeId = await getCallerEmployeeId(user);
 		if (!employeeId || task.employeeId !== employeeId) {
 			throw new AppError(httpStatus.FORBIDDEN, "You can only view submissions on your own tasks");

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { auth } from "../../middleware/checkAuth";
-import { checkPermission } from "../../middleware/checkPermission";
+import { checkAnyPermission, checkPermission } from "../../middleware/checkPermission";
 import { validateRequest } from "../../middleware/validateRequest";
 import { TaskController } from "./task.controller";
 import { TaskValidation } from "./task.validation";
@@ -10,7 +10,7 @@ const router = Router();
 router.get(
 	"/my",
 	auth(),
-	checkPermission("task.view"),
+	checkPermission("task.view_own"),
 	TaskController.getMyTasks,
 );
 
@@ -62,7 +62,8 @@ router.post(
 router.patch(
 	"/:id/status",
 	auth(),
-	checkPermission("task.update"),
+	// Assignees move their own task (task.update_own); managers move any (task.update)
+	checkAnyPermission("task.update_own", "task.update"),
 	validateRequest(TaskValidation.TaskStatusUpdateZodSchema),
 	TaskController.updateTaskStatus,
 );
@@ -70,8 +71,9 @@ router.patch(
 router.get(
 	"/:id/submissions",
 	auth(),
-	// Only task.view — the service scopes to your own task unless you manage tasks
-	checkPermission("task.view"),
+	// Assignee sees their own task's hours (task.view_own); managers see any (task.view).
+	// The service scopes view_own callers to their own task.
+	checkAnyPermission("task.view_own", "task.view"),
 	TaskController.getTaskSubmissions,
 );
 
