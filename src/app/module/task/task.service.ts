@@ -18,6 +18,33 @@ import type {
 	ITaskUpdatePayload,
 } from "./task.interface";
 
+// A task is only workable by someone whose role can move its status (task.update)
+// and log hours against it (submission.create). Blocking at assignment time stops
+// dead tasks given to a role (e.g. HR) that can't act on them.
+const TASK_WORK_PERMISSIONS = ["task.update", "submission.create"];
+const assertAssigneeCanWorkTasks = async (employeeId: string) => {
+	const employee = await prisma.employee.findUnique({
+		where: { id: employeeId },
+		include: {
+			user: {
+				include: {
+					role: { include: { permissions: { include: { permission: true } } } },
+				},
+			},
+		},
+	});
+	if (!employee) return; // existence is validated by the caller
+
+	const perms = new Set(employee.user.role.permissions.map((rp) => rp.permission.name));
+	const missing = TASK_WORK_PERMISSIONS.filter((p) => !perms.has(p));
+	if (missing.length > 0) {
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			`${employee.user.name}'s role can't work on tasks — grant it: ${missing.join(", ")}`,
+		);
+	}
+};
+
 const createTask = async (payload: ITaskCreatePayload, user: IRequestUser) => {
 	const {
 		projectId,
@@ -61,6 +88,7 @@ const createTask = async (payload: ITaskCreatePayload, user: IRequestUser) => {
 	}
 
 	validateEmployeeCanAssign(employee.status);
+	await assertAssigneeCanWorkTasks(employeeId);
 
 	const task = await prisma.task.create({
 		data: {
@@ -373,6 +401,7 @@ const assignTask = async (
 	}
 
 	validateEmployeeCanAssign(employee.status);
+	await assertAssigneeCanWorkTasks(payload.employeeId);
 
 	const updatedTask = await prisma.task.update({
 		where: { id },

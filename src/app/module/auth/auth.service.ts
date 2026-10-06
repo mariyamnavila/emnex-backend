@@ -248,11 +248,14 @@ const loginUser = async (payload: ILoginPayload) => {
 
 // Shapes the account auth() already loaded — no extra query
 const getMe = (account: IAccount) => {
-	const { password: _password, role, ...rest } = account;
+	const { password: _password, role, employee, ...rest } = account;
 	return {
 		...rest,
 		role: { id: role.id, name: role.name, description: role.description },
 		permissions: role.permissions.map((rp) => rp.permission.name),
+		// null for the org owner / any user without an employee record — the
+		// "My tasks/hours/pay" pages are employee-only, so the UI uses this to decide.
+		employeeId: employee?.id ?? null,
 	};
 };
 

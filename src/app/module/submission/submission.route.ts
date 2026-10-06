@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { auth } from "../../middleware/checkAuth";
-import { checkPermission } from "../../middleware/checkPermission";
+import { checkAnyPermission, checkPermission } from "../../middleware/checkPermission";
 import { validateRequest } from "../../middleware/validateRequest";
 import { SubmissionController } from "./submission.controller";
 import { SubmissionValidation } from "./submission.validation";
@@ -22,10 +22,12 @@ router.post(
 	SubmissionController.createSubmission,
 );
 
+// Payroll roles need to preview an employee's approved hours before generating
+// pay (even without submission.view). The service scopes what they can see.
 router.get(
 	"/",
 	auth(),
-	checkPermission("submission.view"),
+	checkAnyPermission("submission.view", "payroll.view", "payroll.generate"),
 	SubmissionController.getAllSubmissions,
 );
 
