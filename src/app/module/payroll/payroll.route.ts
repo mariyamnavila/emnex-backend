@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { auth } from "../../middleware/checkAuth";
-import { checkPermission } from "../../middleware/checkPermission";
+import { checkAnyPermission, checkPermission } from "../../middleware/checkPermission";
 import { validateRequest } from "../../middleware/validateRequest";
 import { PayrollController } from "./payroll.controller";
 import { PayrollValidation } from "./payroll.validation";
@@ -32,7 +32,7 @@ router.get(
 router.get(
 	"/:id",
 	auth(),
-	checkPermission("payroll.view"),
+	checkAnyPermission("payroll.view", "payroll.view_own"),
 	PayrollController.getPayrollById,
 );
 

@@ -45,6 +45,16 @@ const assertAssigneeCanWorkTasks = async (employeeId: string) => {
 	}
 };
 
+// Closed projects take no new work — hours can't be logged against them
+const assertProjectOpen = (project: { name: string; status: string }) => {
+	if (project.status === "COMPLETED" || project.status === "CANCELLED") {
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
+			`${project.name} is ${project.status.toLowerCase()} — reopen it before adding or reassigning tasks`,
+		);
+	}
+};
+
 const createTask = async (payload: ITaskCreatePayload, user: IRequestUser) => {
 	const {
 		projectId,
@@ -71,6 +81,7 @@ const createTask = async (payload: ITaskCreatePayload, user: IRequestUser) => {
 			"Project not found in this organization",
 		);
 	}
+	assertProjectOpen(project);
 
 	// Verify employee exists in this organization
 	const employee = await prisma.employee.findFirst({
@@ -384,6 +395,7 @@ const assignTask = async (
 			"You can only update tasks in your organization",
 		);
 	}
+	assertProjectOpen(task.project);
 
 	// Verify new employee exists in this organization
 	const employee = await prisma.employee.findFirst({
