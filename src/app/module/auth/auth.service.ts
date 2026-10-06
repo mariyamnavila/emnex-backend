@@ -180,7 +180,7 @@ const loginUser = async (payload: ILoginPayload) => {
 
 	const user = await prisma.user.findUnique({
 		where: { email },
-		include: { role: true },
+		include: { role: true, employee: true },
 	});
 
 	if (!user) {
@@ -213,6 +213,15 @@ const loginUser = async (payload: ILoginPayload) => {
 			metadata: { email },
 		});
 		throw new AppError(httpStatus.UNAUTHORIZED, "Invalid credentials");
+	}
+
+	// Credentials are valid — tell a terminated employee why they can't get in
+	// (checked after the password so we don't reveal account status to strangers).
+	if (user.employee?.status === "TERMINATED") {
+		throw new AppError(
+			httpStatus.FORBIDDEN,
+			"Your account has been terminated. Please contact your administrator.",
+		);
 	}
 
 	const { accessToken, refreshToken } = issueTokens({

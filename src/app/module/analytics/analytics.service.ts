@@ -27,11 +27,11 @@ const getDashboard = async (user: IRequestUser) => {
 				where: { organizationId: orgId, status: "ACTIVE" },
 			}),
 			prisma.project.count({
-				where: { organizationId: orgId, status: "ACTIVE" },
+				where: { organizationId: orgId, status: "ACTIVE", deletedAt: null },
 			}),
 			prisma.workSubmission.count({
 				where: {
-					task: { project: { organizationId: orgId } },
+					task: { deletedAt: null, project: { organizationId: orgId, deletedAt: null } },
 					status: "PENDING",
 				},
 			}),
@@ -184,10 +184,10 @@ const getDashboard = async (user: IRequestUser) => {
 		lastPayment,
 	] = await Promise.all([
 		prisma.task.count({
-			where: { employeeId: employee.id },
+			where: { employeeId: employee.id, deletedAt: null },
 		}),
 		prisma.task.count({
-			where: { employeeId: employee.id, status: "COMPLETED" },
+			where: { employeeId: employee.id, status: "COMPLETED", deletedAt: null },
 		}),
 		prisma.workSubmission.count({
 			where: { employeeId: employee.id, status: "PENDING" },
@@ -270,17 +270,17 @@ const getProjectAnalytics = async (user: IRequestUser) => {
 	const [totalByStatus, projectStats, recentProjects] = await Promise.all([
 		prisma.project.groupBy({
 			by: ["status"],
-			where: { organizationId: orgId },
+			where: { organizationId: orgId, deletedAt: null },
 			_count: true,
 		}),
 		prisma.project.findMany({
-			where: { organizationId: orgId },
+			where: { organizationId: orgId, deletedAt: null },
 			include: {
 				_count: { select: { tasks: true } },
 			},
 		}),
 		prisma.project.findMany({
-			where: { organizationId: orgId },
+			where: { organizationId: orgId, deletedAt: null },
 			orderBy: { createdAt: "desc" },
 			take: 5,
 		}),
