@@ -127,6 +127,20 @@ const removePermission = catchAsync(async (req: Request, res: Response) => {
 	});
 });
 
+const resetRolePermissions = catchAsync(async (req: Request, res: Response) => {
+	const roleId = req.params.roleId as string;
+	const user = req.user as IRequestUser;
+
+	const result = await RoleService.resetRolePermissions(roleId, user);
+
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "Permissions reset to default",
+		data: result,
+	});
+});
+
 export const RoleController = {
 	createRole,
 	getAllRoles,
@@ -137,4 +151,5 @@ export const RoleController = {
 	getRolePermissions,
 	assignPermissions,
 	removePermission,
+	resetRolePermissions,
 };

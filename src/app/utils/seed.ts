@@ -80,7 +80,7 @@ const selfServicePermissions = [
 	"payment.view_own",
 ];
 
-const systemRoleTemplates = [
+export const systemRoleTemplates = [
 	{
 		name: "ADMIN",
 		description: "Full organization management",

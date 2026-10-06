@@ -3,6 +3,7 @@ import type { IRequestUser } from "../../interfaces";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/AppError";
 import { AuditAction, createAuditLog, diffFields } from "../../utils/auditLog";
+import { systemRoleTemplates } from "../../utils/seed";
 import type {
 	IPermissionAssignPayload,
 	IRoleCreatePayload,
@@ -500,6 +501,58 @@ const removePermission = async (
 	return { message: "Permission removed from role successfully" };
 };
 
+// Restore a built-in role's permissions to its seed template.
+const resetRolePermissions = async (roleId: string, user: IRequestUser) => {
+	const role = await prisma.role.findUnique({ where: { id: roleId } });
+	if (!role) {
+		throw new AppError(httpStatus.NOT_FOUND, "Role not found");
+	}
+	if (role.organizationId !== user.organizationId) {
+		throw new AppError(httpStatus.FORBIDDEN, "You can only reset roles in your organization");
+	}
+	if (!role.isSystem) {
+		throw new AppError(httpStatus.BAD_REQUEST, "Only built-in roles have default permissions");
+	}
+
+	const currentUser = await prisma.user.findUnique({ where: { id: user.userId } });
+	if (currentUser?.roleId === roleId) {
+		throw new AppError(httpStatus.FORBIDDEN, "Cannot reset the permissions of your own role");
+	}
+
+	const template = systemRoleTemplates.find((t) => t.name === role.name);
+	if (!template) {
+		throw new AppError(httpStatus.BAD_REQUEST, "No default permission set for this role");
+	}
+
+	const permissions = await prisma.permission.findMany({
+		where: { name: { in: template.permissions } },
+		select: { id: true },
+	});
+
+	await prisma.$transaction(async (tx) => {
+		await tx.rolePermission.deleteMany({ where: { roleId } });
+		await tx.rolePermission.createMany({
+			data: permissions.map((p) => ({ roleId, permissionId: p.id })),
+			skipDuplicates: true,
+		});
+		await tx.auditLog.create({
+			data: {
+				userId: user.userId,
+				organizationId: user.organizationId,
+				action: AuditAction.ASSIGN_PERMISSIONS,
+				entity: "Role",
+				entityId: roleId,
+				metadata: { roleName: role.name, reset: true, total: permissions.length },
+			},
+		});
+	});
+
+	return prisma.role.findUnique({
+		where: { id: roleId },
+		include: { permissions: { include: { permission: true } } },
+	});
+};
+
 export const RoleService = {
 	createRole,
 	getAllRoles,
@@ -510,4 +563,5 @@ export const RoleService = {
 	getRolePermissions,
 	assignPermissions,
 	removePermission,
+	resetRolePermissions,
 };

@@ -75,4 +75,12 @@ router.delete(
 	RoleController.removePermission,
 );
 
+// Restore a built-in role's permissions to its default template
+router.post(
+	"/:roleId/reset-permissions",
+	auth(),
+	checkPermission("permission.assign"),
+	RoleController.resetRolePermissions,
+);
+
 export const RoleRoutes = router;
