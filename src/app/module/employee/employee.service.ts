@@ -608,9 +608,26 @@ const resendCredentials = async (id: string, user: IRequestUser) => {
 	return { message: "Credentials resent successfully", temporaryPassword };
 };
 
+// Minimal, pay-free roster for task-assignment pickers, so a dispatcher with
+// task.assign/create can choose an assignee without employee.view (which would
+// expose salaries). Terminated employees can't be assigned, so they're excluded.
+const getEmployeeOptions = async (user: IRequestUser) => {
+	return prisma.employee.findMany({
+		where: { organizationId: user.organizationId, status: { not: "TERMINATED" } },
+		select: {
+			id: true,
+			jobTitle: true,
+			status: true,
+			user: { select: { id: true, name: true } },
+		},
+		orderBy: { user: { name: "asc" } },
+	});
+};
+
 export const EmployeeService = {
 	createEmployee,
 	getAllEmployees,
+	getEmployeeOptions,
 	getEmployeeById,
 	updateEmployee,
 	deleteEmployee,

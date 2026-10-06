@@ -360,9 +360,20 @@ const getProjectStats = async (id: string, user: IRequestUser) => {
 	};
 };
 
+// Minimal list for the task-create project picker — lets a dispatcher with
+// task.create choose a project to attach a task to without full project.view.
+const getProjectOptions = async (user: IRequestUser) => {
+	return prisma.project.findMany({
+		where: { organizationId: user.organizationId, deletedAt: null },
+		select: { id: true, name: true, status: true },
+		orderBy: { name: "asc" },
+	});
+};
+
 export const ProjectService = {
 	createProject,
 	getAllProjects,
+	getProjectOptions,
 	getProjectById,
 	updateProject,
 	deleteProject,

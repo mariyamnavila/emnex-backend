@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { auth } from "../../middleware/checkAuth";
-import { checkPermission } from "../../middleware/checkPermission";
+import { checkAnyPermission, checkPermission } from "../../middleware/checkPermission";
 import { validateRequest } from "../../middleware/validateRequest";
 import { EmployeeController } from "./employee.controller";
 import { EmployeeValidation } from "./employee.validation";
@@ -13,6 +13,14 @@ router.post(
 	checkPermission("employee.create"),
 	validateRequest(EmployeeValidation.CreateEmployeeZodSchema),
 	EmployeeController.createEmployee,
+);
+
+// Pay-free roster for task-assignment pickers (before "/:id" so it isn't shadowed)
+router.get(
+	"/options",
+	auth(),
+	checkAnyPermission("employee.view", "task.assign", "task.create"),
+	EmployeeController.getEmployeeOptions,
 );
 
 router.get(

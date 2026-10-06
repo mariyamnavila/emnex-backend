@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { auth } from "../../middleware/checkAuth";
-import { checkPermission } from "../../middleware/checkPermission";
+import { checkAnyPermission, checkPermission } from "../../middleware/checkPermission";
 import { validateRequest } from "../../middleware/validateRequest";
 import { ProjectController } from "./project.controller";
 import { ProjectValidation } from "./project.validation";
@@ -13,6 +13,14 @@ router.post(
 	checkPermission("project.create"),
 	validateRequest(ProjectValidation.CreateProjectZodSchema),
 	ProjectController.createProject,
+);
+
+// Minimal list for the task-create project picker (before "/:id" so it isn't shadowed)
+router.get(
+	"/options",
+	auth(),
+	checkAnyPermission("project.view", "task.create"),
+	ProjectController.getProjectOptions,
 );
 
 router.get(

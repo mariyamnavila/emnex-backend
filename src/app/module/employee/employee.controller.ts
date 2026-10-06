@@ -112,9 +112,21 @@ const resendCredentials = catchAsync(async (req: Request, res: Response) => {
 	});
 });
 
+const getEmployeeOptions = catchAsync(async (req: Request, res: Response) => {
+	const user = req.user as IRequestUser;
+	const result = await EmployeeService.getEmployeeOptions(user);
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "Employee options retrieved successfully",
+		data: result,
+	});
+});
+
 export const EmployeeController = {
 	createEmployee,
 	getAllEmployees,
+	getEmployeeOptions,
 	getEmployeeById,
 	updateEmployee,
 	deleteEmployee,

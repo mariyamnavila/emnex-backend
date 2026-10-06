@@ -108,9 +108,21 @@ const getProjectStats = catchAsync(async (req: Request, res: Response) => {
 	});
 });
 
+const getProjectOptions = catchAsync(async (req: Request, res: Response) => {
+	const user = req.user as IRequestUser;
+	const result = await ProjectService.getProjectOptions(user);
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "Project options retrieved successfully",
+		data: result,
+	});
+});
+
 export const ProjectController = {
 	createProject,
 	getAllProjects,
+	getProjectOptions,
 	getProjectById,
 	updateProject,
 	deleteProject,
