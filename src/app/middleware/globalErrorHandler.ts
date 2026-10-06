@@ -10,7 +10,6 @@ export const globalErrorHandler = async (
 	res: Response,
 	_next: NextFunction,
 ) => {
-	console.error("Error:", err);
 	let statusCode: number = httpStatus.INTERNAL_SERVER_ERROR;
 	let errorMessage = err.message || "Internal Server Error";
 
@@ -52,6 +51,13 @@ export const globalErrorHandler = async (
 		errorMessage = err.message;
 	} else if (err instanceof Error) {
 		errorMessage = err.message;
+	}
+
+	// Only log real server faults. 4xx (invalid credentials, missing refresh
+	// token for a logged-out visitor, forbidden, validation…) are expected client
+	// states and would otherwise spam the terminal.
+	if (statusCode >= 500) {
+		console.error("Error:", err);
 	}
 
 	res.status(statusCode).json({
