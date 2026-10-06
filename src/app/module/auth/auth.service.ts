@@ -175,6 +175,12 @@ const register = async (payload: IRegisterPayload) => {
 	};
 };
 
+// Compared against when the email is unknown, so a miss costs as much as a real check
+const DUMMY_PASSWORD_HASH = bcrypt.hashSync(
+	"emnex-unknown-account",
+	Number(config.bcrypt_salt_rounds) || 10,
+);
+
 const loginUser = async (payload: ILoginPayload) => {
 	const { email, password } = payload;
 
@@ -183,10 +189,27 @@ const loginUser = async (payload: ILoginPayload) => {
 		include: { role: true, employee: true },
 	});
 
-	if (!user) {
-		throw new AppError(httpStatus.NOT_FOUND, "User not found");
+	// Same answer and the same bcrypt cost whether or not the email exists,
+	// so nobody can probe which emails have accounts
+	const isPasswordValid = await bcrypt.compare(
+		password,
+		user?.password ?? DUMMY_PASSWORD_HASH,
+	);
+
+	if (!user?.password || !isPasswordValid) {
+		if (user) {
+			createAuditLog({
+				user: { userId: user.id, organizationId: user.organizationId },
+				action: AuditAction.LOGIN_FAILED,
+				entity: "User",
+				entityId: user.id,
+				metadata: { email },
+			});
+		}
+		throw new AppError(httpStatus.UNAUTHORIZED, "Invalid credentials");
 	}
 
+	// Credentials are valid — only now say why the account can't get in
 	if (user.status === "BLOCKED") {
 		throw new AppError(httpStatus.FORBIDDEN, "Your account has been blocked");
 	}
@@ -195,28 +218,6 @@ const loginUser = async (payload: ILoginPayload) => {
 		throw new AppError(httpStatus.FORBIDDEN, "Your account has been deleted");
 	}
 
-	if (!user.password) {
-		throw new AppError(
-			httpStatus.BAD_REQUEST,
-			"Your account is linked with Google. Please login with Google.",
-		);
-	}
-
-	const isPasswordValid = await bcrypt.compare(password, user.password);
-
-	if (!isPasswordValid) {
-		createAuditLog({
-			user: { userId: user.id, organizationId: user.organizationId },
-			action: AuditAction.LOGIN_FAILED,
-			entity: "User",
-			entityId: user.id,
-			metadata: { email },
-		});
-		throw new AppError(httpStatus.UNAUTHORIZED, "Invalid credentials");
-	}
-
-	// Credentials are valid — tell a terminated employee why they can't get in
-	// (checked after the password so we don't reveal account status to strangers).
 	if (user.employee?.status === "TERMINATED") {
 		throw new AppError(
 			httpStatus.FORBIDDEN,
@@ -447,7 +448,7 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
 	// Find existing user with this email
 	let user = await prisma.user.findUnique({
 		where: { email },
-		include: { role: true },
+		include: { role: true, employee: true },
 	});
 
 	if (user) {
@@ -460,12 +461,20 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
 			throw new AppError(httpStatus.FORBIDDEN, "Your account has been deleted");
 		}
 
+		// Same rule as password login
+		if (user.employee?.status === "TERMINATED") {
+			throw new AppError(
+				httpStatus.FORBIDDEN,
+				"Your account has been terminated. Please contact your administrator.",
+			);
+		}
+
 		// Link Google account if not already linked
 		if (!user.googleId) {
 			user = await prisma.user.update({
 				where: { id: user.id },
 				data: { googleId },
-				include: { role: true },
+				include: { role: true, employee: true },
 			});
 		}
 	} else {

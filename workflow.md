@@ -62,16 +62,16 @@ sequenceDiagram
 
 | Situation | Result |
 | :--- | :--- |
-| Unknown email | 404 "User not found" |
-| User blocked / deleted | 403 |
-| Google-only account (no password) | 400 "Your account is linked with Google…" |
-| Wrong password | 401 "Invalid credentials" (and a `LOGIN_FAILED` audit entry) |
-| Correct password, employee **terminated** | 403 "Your account has been terminated. Please contact your administrator." — checked *after* the password so strangers can't probe account status |
+| Unknown email, wrong password, or an account with no password | 401 "Invalid credentials" — identical answer and timing (a bcrypt check runs even for unknown emails), so nobody can tell which emails have accounts. A wrong password on a real account also writes a `LOGIN_FAILED` audit entry |
+| Correct password, user **blocked** / **deleted** | 403 "Your account has been blocked" / "…deleted" |
+| Correct password, employee **terminated** | 403 "Your account has been terminated. Please contact your administrator." |
 | Success | 200, cookies set, `user` includes `role` and `mustChangePassword` |
+
+Account status is only revealed **after** the password checks out — a stranger guessing passwords always just sees "Invalid credentials".
 
 **Register** (`POST /auth/register`) creates the organization, copies the four built-in roles into it, and creates the first user as **ADMIN**. Email and organization slug must be unused (409).
 
-**Google sign-in** (`POST /auth/google`) verifies the Google ID token and signs in an **existing** user with that email (linking the Google ID on first use). It never creates accounts — people must be added by their organization first.
+**Google sign-in** (`POST /auth/google`) verifies the Google ID token and signs in an **existing** user with that email (linking the Google ID on first use). It never creates accounts — people must be added by their organization first. Blocked, deleted and terminated accounts are refused with the same 403 messages as password login.
 
 **Refresh** (`POST /auth/refresh-token`) reads only the `refreshToken` cookie. It fails with 401 if the cookie is missing, the token is invalid, the user is inactive, or `tokenVersion` changed.
 
