@@ -12,7 +12,7 @@ Employees log hours on tasks, managers review them, finance turns approved hours
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org)
 [![Stripe](https://img.shields.io/badge/Stripe-Checkout-635BFF?logo=stripe&logoColor=white)](https://stripe.com)
 
-**Live API:** `https://emnex-api.vercel.app/api/v1` &nbsp;·&nbsp; **Live app:** [emnex-beta.vercel.app](https://emnex-beta.vercel.app) &nbsp;·&nbsp; **Frontend repo:** [emnex-frontend](https://github.com/mariyamnavila/emnex-frontend)
+**Live API:** `https://emnex-api.vercel.app/api/v1` &nbsp;·&nbsp; **Live app:** [emnex-frontend.vercel.app](https://emnex-frontend.vercel.app) &nbsp;·&nbsp; **Frontend repo:** [emnex-frontend](https://github.com/mariyamnavila/emnex-frontend)
 
 </div>
 

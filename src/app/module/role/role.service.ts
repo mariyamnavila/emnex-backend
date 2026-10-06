@@ -3,7 +3,7 @@ import type { IRequestUser } from "../../interfaces";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/AppError";
 import { AuditAction, createAuditLog, diffFields } from "../../utils/auditLog";
-import { systemRoleTemplates } from "../../utils/seed";
+import { selfServicePermissions, systemRoleTemplates } from "../../utils/seed";
 import type {
 	IPermissionAssignPayload,
 	IRoleCreatePayload,
@@ -25,13 +25,15 @@ const resolveAssignablePermissions = async (
 	const idByName = new Map(allPermissions.map((p) => [p.name, p.id]));
 	const nameById = new Map(allPermissions.map((p) => [p.id, p.name]));
 	const SELF_ACTIONS = new Set(["view", "view_own"]);
+	const SELF_SERVICE = new Set<string>(selfServicePermissions);
 
 	const withDeps = new Set(inputIds);
 	for (const id of inputIds) {
-		const [moduleName, action] = (nameById.get(id) ?? "").split(".");
-		// Only "act on all" permissions pull in the module's view; self-service
-		// ones (view/view_own and any *_own action) stand alone.
-		if (action && !SELF_ACTIONS.has(action) && !action.endsWith("_own")) {
+		const name = nameById.get(id) ?? "";
+		const [moduleName, action] = name.split(".");
+		// Only "act on all" permissions pull in the module's view; self-service ones
+		// (view/view_own, *_own, and own-only actions like submission.create) stand alone
+		if (action && !SELF_ACTIONS.has(action) && !action.endsWith("_own") && !SELF_SERVICE.has(name)) {
 			const viewId = idByName.get(`${moduleName}.view`);
 			if (viewId) withDeps.add(viewId);
 		}

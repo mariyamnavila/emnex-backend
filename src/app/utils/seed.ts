@@ -70,7 +70,7 @@ const defaultPermissions = [
 
 // Every working user manages their OWN tasks, work hours and pay with these.
 // Management roles add the "all" permissions on top.
-const selfServicePermissions = [
+export const selfServicePermissions = [
 	"task.view_own",
 	"task.update_own",
 	"submission.view_own",
